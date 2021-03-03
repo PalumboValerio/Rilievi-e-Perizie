@@ -86,7 +86,7 @@ lint/tmp/
 # lint/reports/
 
 # bat
-.bat
+*.bat
 
 # ---------------- Nodejs ----------------
 # Logs
