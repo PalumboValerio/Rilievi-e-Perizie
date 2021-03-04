@@ -6,7 +6,8 @@
 const fs = require("fs");
 const colors = require("colors");
 const bodyParser = require("body-parser");
-const uuidv4 = require("uuid").v4;
+const generator = require('generate-password');
+const CryptoJS = require("crypto-js");
 
 // ************************************ Server ************************************ \\
 const privateKey = fs.readFileSync("keys/privateKey.pem", "utf8");
@@ -38,8 +39,8 @@ const nodemailer = require("nodemailer");
 let transporter = nodemailer.createTransport({
     service: 'Gmail',
     auth: {
-        user: 'agenversincofficial@gmail.com',
-        pass: 'AGIO-02_ita'
+        user: 'syphon.ict@gmail.com',
+        pass: 'SyphonICT_2021'
     }
 });
 let _prefix = "http://localhost:1337";//"https://agenversinc.herokuapp.com/"
@@ -170,6 +171,61 @@ app.get("/api/findMail/", function (req, res, next) {
         }
     });
 });
+
+app.post("/api/randomPW", function (req, res, next) {
+    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
+        if (err) {
+            res.status(503).send("Database connection error.");
+        }
+        else {
+            let email = req.body.email;
+
+            let db = client.db(DBNAME);
+            let collection = db.collection('Users');
+
+            collection.findOne({ "email": email }, function (err, data) {
+                if (err) {
+                    res.status(500).send("Internal server error.");
+                }
+                else {
+                    let rndpw=generator.generate({
+                        length:10,
+                        numbers: true
+                    });
+                    let pwCrypted=bcrypt.hashSync(CryptoJS.MD5(rndpw).toString(), 10);
+                    collection.updateOne({"email":email}, {"$set":{"password":pwCrypted}}, function (err, data) {
+                        if (err) {
+                            res.status(500).send("Internal server error.");
+                        }
+                        else{
+                            let mailOptions = {
+                                from: 'syphon.ict@gmail.com',
+                                to: email,
+                                subject: 'Random password',
+                                //text: 'Prova' // invia il corpo in plaintext
+                                html: `<h1>This is your new password: <b>${rndpw}<b></h1><br><p>Change it after login!
+                                       If you didn't ask for it, please change this password immediately!<br><br>Syphon team.</p>`
+                                // invia il corpo in html
+                            };
+                        
+                            // invio il messaggio
+                            transporter.sendMail(mailOptions, function (error, info) {
+                                if (error) {
+                                    res.send({ "ris": "ok" });
+                                    console.log("Error on sending message:     " + error);
+                                }
+                                else {
+                                    res.send({ "ris": "ok" });
+                                }
+                            });
+                            client.close();
+                        }
+                    });
+                }
+            });
+        }
+    });
+})
 
 app.post("/api/signUp/", function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {

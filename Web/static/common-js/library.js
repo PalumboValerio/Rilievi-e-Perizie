@@ -29,7 +29,7 @@ function error(jqXHR, testStatus, strError) {
     }
     else if(jqXHR.status == 403)
     {
-        window.location.href="../../login/login.html";
+        window.location.href="../../login.html";
     }
     else if (jqXHR.status == 200)
     {

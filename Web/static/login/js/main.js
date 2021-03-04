@@ -14,6 +14,27 @@ $(document).ready(function(){
         }
     });
 
+    $('.txt2').on("click", function () {
+        let request = makeRequest("POST", "/api/randomPW/",
+            {
+                "email":"syphon.ict@gmail.com"
+            });
+
+            request.fail(error);
+            request.done(function(data)
+            {
+                swal("A new password was sended to Admin's mailbox", {
+                    icon: "success",
+                    title: "Good!",
+                    buttons: {
+                        cancel: false,
+                        confirm: "Close"
+                    }
+                  }).then((value) => {
+                    
+                  });
+            });
+    })
 
     $('.validate-form .input100').each(function(){
         $(this).focus(function(){
