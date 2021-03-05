@@ -16,25 +16,35 @@ $(document).ready(function(){
 
     $('.txt2').on("click", function () {
         let request = makeRequest("POST", "/api/randomPW/",
-            {
-                "email":"syphon.ict@gmail.com"
-            });
+        {
+            "email":"syphon.ict@gmail.com"
+        });
 
-            request.fail(error);
-            request.done(function(data)
-            {
-                swal("A new password was sended to Admin's mailbox", {
-                    icon: "success",
-                    title: "Good!",
-                    buttons: {
-                        cancel: false,
-                        confirm: "Close"
-                    }
-                  }).then((value) => {
-                    
-                  });
-            });
-    })
+        request.fail(error);
+        request.done(function(data)
+        {
+            swal("A new password was sended to Admin's mailbox", {
+                icon: "success",
+                title: "Good!",
+                buttons: {
+                    cancel: false,
+                    confirm: "Close"
+                }
+                }).then((value) => {
+                
+                });
+        });
+    });
+
+    $(".toggle-password").on("click", function() {
+
+        $(this).toggleClass("fa-eye fa-eye-slash");
+        if (input.eq(1).prop("type") == "password") {
+          input.eq(1).prop("type", "text");
+        } else {
+          input.eq(1).prop("type", "password");
+        }
+      });
 
     $('.validate-form .input100').each(function(){
         $(this).focus(function(){

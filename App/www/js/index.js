@@ -1,0 +1,56 @@
+$(document).ready(function() {
+    document.addEventListener('deviceready', function() 
+    {
+        let _wrapper =$("#wrapper");
+        let cameraOptions={"quality":50};
+        let gpsOptions = {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+        };
+        
+        $("#btnScatta").on("click", function(){
+            cameraOptions.sourceType=Camera.PictureSourceType.CAMERA;
+            cameraOptions.destinationType=Camera.DestinationType.DATA_URL;
+            navigator.camera.getPicture(success, error, cameraOptions);
+        });
+
+        /*$("#btnCerca").on("click", function(){
+            cameraOptions.sourceType=Camera.PictureSourceType.SAVEDPHOTOALBUM;
+            cameraOptions.destinationType=Camera.DestinationType.DATA_URL;
+            navigator.camera.getPicture(success, error, cameraOptions);
+        });*/
+
+        function success(image)
+        {
+            $("<img>").css("height", 80).prop("src", `data:image/jpeg;base64,${image}`).appendTo(_wrapper);
+            let date=new Date();
+            // Codice/Mail operatore da reperire dal db. Dopo il login riuscito, salvarsi la mail
+            // Note mediante una comparsa di una form che conterrà preview della foto scattata, 
+            // posizione, data e ora e una input box per un eventuale commento facoltativo
+            navigator.geolocation.getCurrentPosition(function(){
+                // Appare la form con la conferma dell'inserimento. Premendo su conferma si chiama il
+                // server e gli si passano i dati per inserire nel db la nuova perizia
+            }, error, gpsOptions);
+        }
+
+        function error(err)
+        {
+            if(err.code)
+            {
+                notifica(`Errore: ${err.code}-${err.message}`);
+            }
+        }
+
+        function notifica(msg){		 
+            navigator.notification.alert(
+                msg,    
+                voidFunction,       
+                "Info",       // Titolo finestra
+                "Ok"          // pulsante di chiusura
+            );			 
+        }
+
+        let voidFunction=function() {}
+    });
+});    
