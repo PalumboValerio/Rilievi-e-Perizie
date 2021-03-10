@@ -12,16 +12,16 @@ const CryptoJS = require("crypto-js");
 // ************************************ Server ************************************ \\
 const privateKey = fs.readFileSync("keys/privateKey.pem", "utf8");
 const certificate = fs.readFileSync("keys/certificate.pem", "utf8");
-const credentials = { "key": privateKey, "cert": certificate };
+//const credentials = { "key": privateKey, "cert": certificate };
 
-//const http = require("http");
-const https = require("https");
+const http = require("http");
+//const https = require("https");
 const express = require("express");
 const app = express();
-const cors=require("cors");
-const fileupload=require("express-fileupload");
-//const server = http.createServer(app);
-const server = https.createServer(credentials, app);
+const cors = require("cors");
+const fileupload = require("express-fileupload");
+const server = http.createServer(app);
+//const server = https.createServer(credentials, app);
 const PORT = process.env.PORT || 1337;
 const SRVR_LOG = ">>>>>>>> ";
 let errorPage;
@@ -30,8 +30,12 @@ let errorPage;
 let mongo = require("mongodb");
 let ObjectID = mongo.ObjectID;
 let mongoClient = mongo.MongoClient;
-const CONNECTIONSTRING = "mongodb+srv://Admin:Admin2021@rilievi-e-perizie.xy2kq.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
-const CONNECTIONOPTIONS = { useNewUrlParser: true, useUnifiedTopology: true };
+const CONNECTIONSTRING = process.env.MONGODB_URI
+//const CONNECTIONSTRING = "mongodb+srv://Admin:Admin2021@rilievi-e-perizie.xy2kq.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+const CONNECTIONOPTIONS = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+};
 const DBNAME = "Rilievi-e-Perizie";
 
 // ************************************ nodemailer ************************************ \\
@@ -43,7 +47,8 @@ let transporter = nodemailer.createTransport({
         pass: 'SyphonICT_2021'
     }
 });
-let _prefix = "http://localhost:1337";//"https://agenversinc.herokuapp.com/"
+//let _prefix = "http://localhost:1337";
+let _prefix = "https://palumbo-rilievi-e-perizie.herokuapp.com/"
 
 // ************************************ Login & registration ************************************ \\
 let bcrypt = require("bcryptjs");
@@ -62,8 +67,9 @@ cloudinary.config({
 });
 
 // ************************************ CORS ************************************ \\
-const whitelist = ["http://localhost:8080", "https://localhost:1337",
-                   "http://192.168.137.1:8080", "https://192.168.137.1:1337"];
+const whitelist = ["http://localhost:8080", "https://localhost:1337", "http://localhost:1337",
+    "http://192.168.137.1:8080", "https://192.168.137.1:1337", "https://palumbo-rilievi-e-perizie.herokuapp.com/"
+];
 const corsOptions = {
     origin: function (origin, callback) {
         if (!origin)
@@ -72,18 +78,16 @@ const corsOptions = {
             var msg = 'The CORS policy for this site does not ' +
                 'allow access from the specified Origin.';
             return callback(new Error(msg), false);
-        }
-        else
+        } else
             return callback(null, true);
     },
     credentials: true
 };
 
 /* ********************** Starting listening server ********************** */
-
+init();
 server.listen(PORT, function () {
     console.log(`${colors.green(`[${new Date().toLocaleTimeString()}]`)}${colors.blue(`${SRVR_LOG}`)}Server listening on port: ${PORT}`);
-    init();
 });
 
 /* ********************** Express listener ********************** */
@@ -102,7 +106,9 @@ app.get("/index.html", checkToken);
 app.use('/', express.static("./static"));
 
 // 4) Route di lettura dei parametri post.
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
 app.use(bodyParser.json());
 
 // 5) Route di log dei parametri.
@@ -121,46 +127,65 @@ app.use("/",function(req,res,next){
 */
 
 // 6) CORS
-app.use("/", cors(corsOptions));
+app.use("/", function (req, res, next) {
+    res.setHeader("Access-Controll-Allow-Origin", "*");
+    res.setHeader("Access-Controll-Allow-Headers", "*");
+    res.setHeader("Access-Controll-Allow-Credientials", true);
+    next();
+})
+//app.use("/", cors(corsOptions));
 
 // 7) JSON
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+    limit: '10mb'
+}));
 app.set("json spaces", 4);
 
 // 8) File size
-app.use("/", fileupload({"limits": {"fileSize":(10 * 1024 * 1024)}})) // 10Mb
+app.use("/", fileupload({
+    "limits": {
+        "fileSize": (10 * 1024 * 1024)
+    }
+})) // 10Mb
 
 app.get("/api/findMail/", function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
         if (err) {
             res.status(503).send("Database connection error.");
-        }
-        else {
+        } else {
             let mail = req.query.email;
 
             let db = client.db(DBNAME);
             let collection = db.collection('Users');
 
-            collection.findOne({ "email": mail }, function (err, data) {
+            collection.findOne({
+                "email": mail
+            }, function (err, data) {
                 if (err) {
                     res.status(500).send("Internal Error in Query Execution.");
-                }
-                else {
+                } else {
                     if (data) {
-                        res.send({ "email": "find", "collection": "Users" });
-                    }
-                    else {
+                        res.send({
+                            "email": "find",
+                            "collection": "Users"
+                        });
+                    } else {
                         let collection2 = db.collection('Transition')
-                        collection2.findOne({ "email": mail }, function (err, data) {
+                        collection2.findOne({
+                            "email": mail
+                        }, function (err, data) {
                             if (err) {
                                 res.status(500).send("Internal Error in Query Execution.");
-                            }
-                            else {
+                            } else {
                                 if (data) {
-                                    res.send({ "email": "find", "collection": "Transition" });
-                                }
-                                else {
-                                    res.send({ "email": "not find" });
+                                    res.send({
+                                        "email": "find",
+                                        "collection": "Transition"
+                                    });
+                                } else {
+                                    res.send({
+                                        "email": "not find"
+                                    });
                                 }
                                 client.close();
                             }
@@ -176,28 +201,33 @@ app.post("/api/randomPW", function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
         if (err) {
             res.status(503).send("Database connection error.");
-        }
-        else {
+        } else {
             let email = req.body.email;
 
             let db = client.db(DBNAME);
             let collection = db.collection('Users');
 
-            collection.findOne({ "email": email }, function (err, data) {
+            collection.findOne({
+                "email": email
+            }, function (err, data) {
                 if (err) {
                     res.status(500).send("Internal server error.");
-                }
-                else {
-                    let rndpw=generator.generate({
-                        length:10,
+                } else {
+                    let rndpw = generator.generate({
+                        length: 10,
                         numbers: true
                     });
-                    let pwCrypted=bcrypt.hashSync(CryptoJS.MD5(rndpw).toString(), 10);
-                    collection.updateOne({"email":email}, {"$set":{"password":pwCrypted}}, function (err, data) {
+                    let pwCrypted = bcrypt.hashSync(CryptoJS.MD5(rndpw).toString(), 10);
+                    collection.updateOne({
+                        "email": email
+                    }, {
+                        "$set": {
+                            "password": pwCrypted
+                        }
+                    }, function (err, data) {
                         if (err) {
                             res.status(500).send("Internal server error.");
-                        }
-                        else{
+                        } else {
                             let mailOptions = {
                                 from: 'syphon.ict@gmail.com',
                                 to: email,
@@ -207,15 +237,18 @@ app.post("/api/randomPW", function (req, res, next) {
                                        If you didn't ask for it, please change this password immediately!<br><br>Syphon team.</p>`
                                 // invia il corpo in html
                             };
-                        
+
                             // invio il messaggio
                             transporter.sendMail(mailOptions, function (error, info) {
                                 if (error) {
-                                    res.send({ "ris": "ok" });
+                                    res.send({
+                                        "ris": "ok"
+                                    });
                                     console.log("Error on sending message:     " + error);
-                                }
-                                else {
-                                    res.send({ "ris": "ok" });
+                                } else {
+                                    res.send({
+                                        "ris": "ok"
+                                    });
                                 }
                             });
                             client.close();
@@ -231,8 +264,7 @@ app.post("/api/signUp/", function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
         if (err) {
             res.status(503).send("Database connection error.");
-        }
-        else {
+        } else {
             let email = req.body.email;
             let password = bcrypt.hashSync(req.body.password, 10);
             let gender = req.body.gender;
@@ -240,16 +272,21 @@ app.post("/api/signUp/", function (req, res, next) {
             let db = client.db(DBNAME);
             let collection = db.collection('transition');
 
-            collection.insertOne({ "email": email, "password": password, "gender": gender, "crediti": 0 }, function (err, data) {
+            collection.insertOne({
+                "email": email,
+                "password": password,
+                "gender": gender,
+                "crediti": 0
+            }, function (err, data) {
                 if (err) {
                     res.status(500).send("Internal Error in Query Execution.");
-                }
-                else {
-                    collection.findOne({ "email": email }, function (err, data) {
+                } else {
+                    collection.findOne({
+                        "email": email
+                    }, function (err, data) {
                         if (err) {
                             res.status(500).send("Internal server error.");
-                        }
-                        else {
+                        } else {
                             let mailOptions = {
                                 from: 'agenversincofficial@gmail.com',
                                 to: email,
@@ -265,11 +302,14 @@ app.post("/api/signUp/", function (req, res, next) {
                             // invio il messaggio
                             transporter.sendMail(mailOptions, function (error, info) {
                                 if (error) {
-                                    res.send({ "ris": "ok" });
+                                    res.send({
+                                        "ris": "ok"
+                                    });
                                     console.log("Error on sending message:     " + error);
-                                }
-                                else {
-                                    res.send({ "ris": "ok" });
+                                } else {
+                                    res.send({
+                                        "ris": "ok"
+                                    });
                                 }
                             });
                             client.close();
@@ -287,43 +327,51 @@ app.get('/api/confirmSignUp', function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
         if (err) {
             res.status(503).send("Database connection error.");
-        }
-        else {
+        } else {
             let db = client.db(DBNAME);
             let collection = db.collection('transition');
-            collection.findOne({ "_id": id }, function (err, data) {
+            collection.findOne({
+                "_id": id
+            }, function (err, data) {
                 if (err) {
-                    res.send({ "ris": "nok - ID not found" });
-                }
-                else {
+                    res.send({
+                        "ris": "nok - ID not found"
+                    });
+                } else {
                     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client1) {
                         if (err) {
                             res.status(503).send("Database connection error.");
-                        }
-                        else {
+                        } else {
                             if (data) {
                                 let collection1 = db.collection('users');
                                 collection1.insertOne(data, function (err, data1) {
                                     if (err) {
-                                        res.send({ "ris": "nok - User not insered" });
-                                    }
-                                    else {
+                                        res.send({
+                                            "ris": "nok - User not insered"
+                                        });
+                                    } else {
                                         client1.close();
-                                        collection.deleteOne({ "_id": id }, function (err, data) {
+                                        collection.deleteOne({
+                                            "_id": id
+                                        }, function (err, data) {
                                             if (err) {
-                                                res.send({ "ris": "nok - ID not deleted" });
-                                            }
-                                            else {
-                                                res.send({ "ris": "ok" });
+                                                res.send({
+                                                    "ris": "nok - ID not deleted"
+                                                });
+                                            } else {
+                                                res.send({
+                                                    "ris": "ok"
+                                                });
                                             }
                                             client.close();
                                         });
                                     }
                                 });
-                            }
-                            else {
+                            } else {
                                 client.close();
-                                res.send({ "ris": "nok - No id found. If you think this is an error please contact us at the email address agenversincofficial@gmail.com" })
+                                res.send({
+                                    "ris": "nok - No id found. If you think this is an error please contact us at the email address agenversincofficial@gmail.com"
+                                })
                             }
                         }
                     });
@@ -338,40 +386,37 @@ app.post('/api/login', function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
         if (err) {
             res.status(503).send("Database connection error.");
-        }
-        else {
+        } else {
             let db = client.db(DBNAME);
             let collection = db.collection('Users');
 
             let mail = req.body.email;
             let pw = req.body.password;
             let admin = req.body.admin;
-            collection.findOne({ "email": mail }, function (err, dbUser) {
+
+            collection.findOne({
+                "email": mail
+            }, function (err, dbUser) {
                 if (err) {
                     res.status(500).send("Internal Error in Query Execution.");
-                }
-                else {
+                } else {
                     if (dbUser == null) {
                         res.status(401).send("Email or password not correct.");
-                    }
-                    else {
+                    } else {
                         bcrypt.compare(pw, dbUser.password, function (err, ok) {
                             if (err) {
                                 res.status(500).send("Internal Error in bcrypt compare.");
-                            }
-                            else {
+                            } else {
                                 if (!ok) {
                                     res.status(401).send("Email or password not correct.");
-                                }
-                                else {
-                                    if((admin && dbUser.admin) || !admin)
-                                    {
+                                } else {
+                                    if ((admin && dbUser.admin) || !admin) {
                                         setTokenAndCookie(dbUser, res);
-                                        res.send({ "ris": "ok" });
+                                        res.send({
+                                            "ris": "ok"
+                                        });
                                         client.close();
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         res.status(401).send("Access Denied");
                                     }
                                 }
@@ -391,37 +436,44 @@ app.post("/api/changePassword", function (req, res, next) {
         mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
             if (err) {
                 res.status(503).send("Database connection error.");
-            }
-            else {
+            } else {
                 let db = client.db(DBNAME);
                 let collection = db.collection('Users');
-                collection.updateOne({ "_id": id }, { $set: { "password": password } }, function (err, data) {
+                collection.updateOne({
+                    "_id": id
+                }, {
+                    $set: {
+                        "password": password
+                    }
+                }, function (err, data) {
                     if (err) {
                         res.status(500).send("Internal server error.");
-                    }
-                    else {
+                    } else {
                         res.send(data);
                     }
                     client.close();
                 });
             }
         });
-    }
-    else {
+    } else {
         let email = req.body.email;
         let password = bcrypt.hashSync(req.body.password, 10);
         mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
             if (err) {
                 res.status(503).send("Database connection error.");
-            }
-            else {
+            } else {
                 let db = client.db(DBNAME);
                 let collection = db.collection('Users');
-                collection.updateOne({ "email": email }, { $set: { "password": password } }, function (err, data) {
+                collection.updateOne({
+                    "email": email
+                }, {
+                    $set: {
+                        "password": password
+                    }
+                }, function (err, data) {
                     if (err) {
                         res.status(500).send("Internal server error.");
-                    }
-                    else {
+                    } else {
                         res.send(data);
                     }
                     client.close();
@@ -440,24 +492,26 @@ app.use("/api", checkToken);
 
 app.post('/api/logout', function (req, res, next) {
     res.set("Set-Cookie", "token=;max-age=-1;Path=/;httponly=true;");
-    res.send({ "ris": "ok" });
+    res.send({
+        "ris": "ok"
+    });
 });
 
 app.post("/api/getInfo", function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
         if (err) {
             res.status(503).send("Database connection error.");
-        }
-        else {
+        } else {
             let db = client.db(DBNAME);
             let collection = db.collection('users');
             let uId = ObjectID(req.payload["_id"]);
 
-            collection.findOne({ "_id": uId }, function (err, data) {
+            collection.findOne({
+                "_id": uId
+            }, function (err, data) {
                 if (err) {
                     res.status(500).send("Internal server error.");
-                }
-                else {
+                } else {
                     res.send(data);
                 }
                 client.close();
@@ -470,15 +524,16 @@ app.post("/api/updateUser", function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
         if (err) {
             res.status(503).send("Database connection error.");
-        }
-        else {
+        } else {
             let db = client.db(DBNAME);
             let collection = db.collection('users');
             let uId = ObjectID(req.payload["_id"]);
             let password = req.body["password"];
 
             if (password != "404") {
-                collection.updateOne({ "_id": uId }, {
+                collection.updateOne({
+                    "_id": uId
+                }, {
                     $set: {
                         "name": req.body.name,
                         "surname": req.body.surname,
@@ -490,8 +545,7 @@ app.post("/api/updateUser", function (req, res, next) {
                 }, function (err, data) {
                     if (err) {
                         res.status(500).send("Internal server error.");
-                    }
-                    else {
+                    } else {
                         res.send(data);
                         let mailOptions = {
                             from: 'agenversincofficial@gmail.com',
@@ -499,24 +553,28 @@ app.post("/api/updateUser", function (req, res, next) {
                             subject: 'Urgent!!!',
                             html: `<h1>Your password has been changed.</h1><p>If you don't recognise this activity click ` +
                                 `<a href="${_prefix}/resetPassword.html?id=${uId}">here</a>.<br>If that was you ignore` +
-                                ` this mail.<br><b>Thank you.<b><br><br>The AgenversInc Team</p>`  // invia il corpo in html
+                                ` this mail.<br><b>Thank you.<b><br><br>The AgenversInc Team</p>` // invia il corpo in html
                         };
                         client.close();
                         // invio il messaggio
                         transporter.sendMail(mailOptions, function (error, info) {
                             if (error) {
-                                res.send({ "ris": "ok" });
+                                res.send({
+                                    "ris": "ok"
+                                });
                                 console.log("Error on sending message:     " + error);
-                            }
-                            else {
-                                res.send({ "ris": "ok" });
+                            } else {
+                                res.send({
+                                    "ris": "ok"
+                                });
                             }
                         });
                     }
                 });
-            }
-            else {
-                collection.updateOne({ "_id": uId }, {
+            } else {
+                collection.updateOne({
+                    "_id": uId
+                }, {
                     $set: {
                         "name": req.body.name,
                         "surname": req.body.surname,
@@ -527,8 +585,7 @@ app.post("/api/updateUser", function (req, res, next) {
                 }, function (err, data) {
                     if (err) {
                         res.status(500).send("Internal server error.");
-                    }
-                    else {
+                    } else {
                         res.send(data);
                     }
                     client.close();
@@ -542,17 +599,21 @@ app.post("/api/findUsers", function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
         if (err) {
             res.status(503).send("Errore connessione al DB");
-        }
-        else {
+        } else {
             let db = client.db(DBNAME);
             let id = req.payload["_id"];
             let collection = db.collection("Chatheon");
 
-            collection.find({ "users._id": { $in: [id] } }).project({ "users._id": 1 }).toArray(function (err, data) {
+            collection.find({
+                "users._id": {
+                    $in: [id]
+                }
+            }).project({
+                "users._id": 1
+            }).toArray(function (err, data) {
                 if (err) {
                     res.status(500).send("Internal Server Error");
-                }
-                else {
+                } else {
                     let user = [];
                     user.push(ObjectID(id));
                     for (let i = 0; i < data.length; i++) {
@@ -568,11 +629,19 @@ app.post("/api/findUsers", function (req, res, next) {
                         }
                     }
                     let collectionUsers = db.collection("Users");
-                    collectionUsers.find({ "_id": { $nin: user } }).project({ _id: 1, email: 1, username: 1, gender: 1 }).toArray(function (err, dataUsers) {
+                    collectionUsers.find({
+                        "_id": {
+                            $nin: user
+                        }
+                    }).project({
+                        _id: 1,
+                        email: 1,
+                        username: 1,
+                        gender: 1
+                    }).toArray(function (err, dataUsers) {
                         if (err) {
                             res.status(500).send("Internal Server Error");
-                        }
-                        else {
+                        } else {
                             res.send(dataUsers)
                         }
                         client.close();
@@ -584,22 +653,21 @@ app.post("/api/findUsers", function (req, res, next) {
 });
 
 /*
-* If no previous route is valid for the request this one is done. Send the error page.
-*/
+ * If no previous route is valid for the request this one is done. Send the error page.
+ */
 app.use("*", function (req, res, next) {
     res.status(404);
     if (req.originalUrl.startsWith("/api/")) {
         //res.json("Sorry, can't find the resource you are looking for.");
         res.send("Resource not found.");
-    }
-    else {
+    } else {
         res.send(errorPage);
     }
 });
 
 /*
-* If the server generate an error this route is done. Send the http response code 500.
-*/
+ * If the server generate an error this route is done. Send the http response code 500.
+ */
 app.use(function (err, req, res, next) {
     console.log(err.stack); //Stack completo (default).
     if (!err.codice) {
@@ -619,16 +687,14 @@ function init() {
     fs.readFile("./static/error.html", function (err, data) {
         if (!err) {
             errorPage = data.toString();
-        }
-        else {
+        } else {
             errorPage = '<h1 style="color:red;text-align:center;">- Page or resource not found -</h1><br><a class="btn btn-primary" style="margin:0 auto;" href="/index.html">Home</a>';
         }
     });
-    fs.readFile("./Keys/privateToken.key", function (err, data) {
+    fs.readFile("./keys/privateToken.key", function (err, data) {
         if (!err) {
             PRIVATE_KEY = data.toString();
-        }
-        else {
+        } else {
             console.log("The private key is missing");
             server.close();
         }
@@ -641,14 +707,14 @@ function init() {
 
 /*
  * Write the data that recive as a parameter after date and hour.
-*/
+ */
 function log(data) {
     console.log(`${colors.cyan("[" + new Date().toLocaleTimeString() + "]")} ${data}`);
 }
 
 /*
  * Search if a user is already logged in.
-*/
+ */
 function findUser(username, room) {
     return users.find(function (item) {
         return (item.username == username && item.room == room)
@@ -660,13 +726,11 @@ function checkToken(req, res, next) {
 
     if (token == NO_COOKIES) {
         sendError(req, res, 403, "Token mancante");
-    }
-    else {
+    } else {
         jwt.verify(token, PRIVATE_KEY, function (err, payload) {
             if (err) {
                 sendError(req, res, 403, "Token expired or corrupted");
-            }
-            else {
+            } else {
                 // ...vet per scomporlo
                 setTokenAndCookie(payload, res);
                 req.payload = payload;
@@ -679,8 +743,7 @@ function checkToken(req, res, next) {
 function sendError(req, res, cod, errMex) {
     if (req.originalUrl.startsWith("/api/")) {
         res.status(cod).send(errMex);
-    }
-    else {
+    } else {
         res.sendFile(`${__dirname}/static/login.html`);
     }
 }
@@ -723,5 +786,5 @@ function createToken(data) {
 
 function writeCookie(res, token, expires = TTL) {
     //set() --> metodo di express che consente di impostare una o più intestazioni nella risposta HTTP    createCookie(token, expires)
-    res.set("Set-Cookie", `token=${token};expires=${expires};path=/;httponly=true;secure=true`);
+    res.set("Set-Cookie", `token=${token};expires=${expires};path=/;httponly=true`);
 }
