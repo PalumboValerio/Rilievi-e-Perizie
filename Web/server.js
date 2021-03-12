@@ -148,46 +148,44 @@ app.use("/", fileupload({
     }
 })) // 10Mb
 
-app.get("/api/findMail/", function (req, res, next) {
+app.post('/api/login', function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
         if (err) {
             res.status(503).send("Database connection error.");
         } else {
-            let mail = req.query.email;
-
             let db = client.db(DBNAME);
             let collection = db.collection('Users');
 
+            let mail = req.body.email;
+            let pw = req.body.password;
+            let admin = req.body.admin;
+
             collection.findOne({
                 "email": mail
-            }, function (err, data) {
+            }, function (err, dbUser) {
                 if (err) {
                     res.status(500).send("Internal Error in Query Execution.");
                 } else {
-                    if (data) {
-                        res.send({
-                            "email": "find",
-                            "collection": "Users"
-                        });
+                    if (dbUser == null) {
+                        res.status(401).send("Email or password not correct.");
                     } else {
-                        let collection2 = db.collection('Transition')
-                        collection2.findOne({
-                            "email": mail
-                        }, function (err, data) {
+                        bcrypt.compare(pw, dbUser.password, function (err, ok) {
                             if (err) {
-                                res.status(500).send("Internal Error in Query Execution.");
+                                res.status(500).send("Internal Error in bcrypt compare.");
                             } else {
-                                if (data) {
-                                    res.send({
-                                        "email": "find",
-                                        "collection": "Transition"
-                                    });
+                                if (!ok) {
+                                    res.status(401).send("Email or password not correct.");
                                 } else {
-                                    res.send({
-                                        "email": "not find"
-                                    });
+                                    if ((admin && dbUser.admin) || !admin) {
+                                        let cookie=setTokenAndCookie(dbUser, res);
+                                        res.send({
+                                            "ris": cookie
+                                        });
+                                        client.close();
+                                    } else {
+                                        res.status(401).send("Access Denied");
+                                    }
                                 }
-                                client.close();
                             }
                         });
                     }
@@ -260,169 +258,26 @@ app.post("/api/randomPW", function (req, res, next) {
     });
 })
 
-app.post("/api/signUp/", function (req, res, next) {
+app.get("/api/findMail/", function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
         if (err) {
             res.status(503).send("Database connection error.");
         } else {
-            let email = req.body.email;
-            let password = bcrypt.hashSync(req.body.password, 10);
-            let gender = req.body.gender;
+            let mail = req.query.email;
 
-            let db = client.db(DBNAME);
-            let collection = db.collection('transition');
-
-            collection.insertOne({
-                "email": email,
-                "password": password,
-                "gender": gender,
-                "crediti": 0
-            }, function (err, data) {
-                if (err) {
-                    res.status(500).send("Internal Error in Query Execution.");
-                } else {
-                    collection.findOne({
-                        "email": email
-                    }, function (err, data) {
-                        if (err) {
-                            res.status(500).send("Internal server error.");
-                        } else {
-                            let mailOptions = {
-                                from: 'agenversincofficial@gmail.com',
-                                to: email,
-                                subject: 'Confirm registration',
-                                //text: 'Prova' // invia il corpo in plaintext
-                                html: `<h1>Congratulations!</h1><p>We are glad that you have decided to join us, ` +
-                                    `but you need to do another step beforeyou can consider yoursefl part of us...<br>` +
-                                    `Confirm your subscription by pressing <a href="http://${_prefix}/confirmSubscription.html?id=${data["_id"]}">here</a>.` +
-                                    `We are waiting for you to complete your registration.<br>See you soon.<br><br>The agenversinc team.</p>`
-                                // invia il corpo in html
-                            };
-
-                            // invio il messaggio
-                            transporter.sendMail(mailOptions, function (error, info) {
-                                if (error) {
-                                    res.send({
-                                        "ris": "ok"
-                                    });
-                                    console.log("Error on sending message:     " + error);
-                                } else {
-                                    res.send({
-                                        "ris": "ok"
-                                    });
-                                }
-                            });
-                            client.close();
-                        }
-                    });
-                }
-            });
-        }
-    });
-});
-
-app.get('/api/confirmSignUp', function (req, res, next) {
-    let id = ObjectID(req.query.id);
-
-    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
-        if (err) {
-            res.status(503).send("Database connection error.");
-        } else {
-            let db = client.db(DBNAME);
-            let collection = db.collection('transition');
-            collection.findOne({
-                "_id": id
-            }, function (err, data) {
-                if (err) {
-                    res.send({
-                        "ris": "nok - ID not found"
-                    });
-                } else {
-                    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client1) {
-                        if (err) {
-                            res.status(503).send("Database connection error.");
-                        } else {
-                            if (data) {
-                                let collection1 = db.collection('users');
-                                collection1.insertOne(data, function (err, data1) {
-                                    if (err) {
-                                        res.send({
-                                            "ris": "nok - User not insered"
-                                        });
-                                    } else {
-                                        client1.close();
-                                        collection.deleteOne({
-                                            "_id": id
-                                        }, function (err, data) {
-                                            if (err) {
-                                                res.send({
-                                                    "ris": "nok - ID not deleted"
-                                                });
-                                            } else {
-                                                res.send({
-                                                    "ris": "ok"
-                                                });
-                                            }
-                                            client.close();
-                                        });
-                                    }
-                                });
-                            } else {
-                                client.close();
-                                res.send({
-                                    "ris": "nok - No id found. If you think this is an error please contact us at the email address agenversincofficial@gmail.com"
-                                })
-                            }
-                        }
-                    });
-
-                }
-            });
-        }
-    });
-});
-
-app.post('/api/login', function (req, res, next) {
-    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
-        if (err) {
-            res.status(503).send("Database connection error.");
-        } else {
             let db = client.db(DBNAME);
             let collection = db.collection('Users');
 
-            let mail = req.body.email;
-            let pw = req.body.password;
-            let admin = req.body.admin;
-
             collection.findOne({
                 "email": mail
-            }, function (err, dbUser) {
+            }, function (err, data) {
                 if (err) {
                     res.status(500).send("Internal Error in Query Execution.");
                 } else {
-                    if (dbUser == null) {
-                        res.status(401).send("Email or password not correct.");
-                    } else {
-                        bcrypt.compare(pw, dbUser.password, function (err, ok) {
-                            if (err) {
-                                res.status(500).send("Internal Error in bcrypt compare.");
-                            } else {
-                                if (!ok) {
-                                    res.status(401).send("Email or password not correct.");
-                                } else {
-                                    if ((admin && dbUser.admin) || !admin) {
-                                        setTokenAndCookie(dbUser, res);
-                                        res.send({
-                                            "ris": "ok"
-                                        });
-                                        client.close();
-                                    } else {
-                                        res.status(401).send("Access Denied");
-                                    }
-                                }
-                            }
-                        });
-                    }
+                    res.send({
+                        "ris": "ok"
+                    });
+                    client.close();
                 }
             });
         }
@@ -484,7 +339,7 @@ app.post("/api/changePassword", function (req, res, next) {
 });
 
 app.post("/api/checkToken", function (req, res, next) {
-    let token = checkToken(req, res, next, "POST");
+    let token = checkToken(req, res, next);
     res.send(token);
 });
 
@@ -750,7 +605,7 @@ function sendError(req, res, cod, errMex) {
 
 function setTokenAndCookie(payload, res) {
     let newToken = createToken(payload);
-    writeCookie(res, newToken);
+    return writeCookie(res, newToken);
 }
 
 function readCookie(req) {
@@ -787,4 +642,5 @@ function createToken(data) {
 function writeCookie(res, token, expires = TTL) {
     //set() --> metodo di express che consente di impostare una o più intestazioni nella risposta HTTP    createCookie(token, expires)
     res.set("Set-Cookie", `token=${token};expires=${expires};path=/;httponly=true`);
+    return `token=${token};expires=${expires};path=/;httponly=true`;
 }

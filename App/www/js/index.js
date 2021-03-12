@@ -6,9 +6,15 @@ $(document).ready(function () {
         let txtDateTime=$("#input_11");
         let txtNotes=$("#input_8");
 
+        if(!localStorage.getItem("SyphonCookie"))
+        {
+            window.location.href="login.html";
+        }
+
         let cameraOptions = {
             "quality": 50
         };
+
         let gpsOptions = {
             enableHighAccuracy: true,
             timeout: 5000,
