@@ -8,9 +8,7 @@ $(document).ready(function () {
 
         if(!localStorage.getItem("SyphonCookie"))
         {
-            window.location.href="login.html";
-            window.history.pushState([], "<name>", "<url>")
-            $ionicViewService.clearHistory();
+            window.location.replace("login.html");
         }
 
         let cameraOptions = {
@@ -35,7 +33,7 @@ $(document).ready(function () {
 
         $("#btnLogout").on("click", function () {
             localStorage.removeItem("SyphonCookie");
-            window.location.href="login.html";
+            window.location.replace("login.html");
         });
 
         /*$("#btnCerca").on("click", function(){

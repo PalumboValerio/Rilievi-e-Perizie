@@ -47,6 +47,21 @@ let transporter = nodemailer.createTransport({
         pass: 'SyphonICT_2021'
     }
 });
+
+/* Giulia */
+const CONNECTIONSTRING_Giulia = "mongodb+srv://admin:adminpassword@progettoperizie.r13yb.mongodb.net";
+const CONNECTIONOPTIONS_Giulia = {useNewUrlParser: true, useUnifiedTopology: true};
+const DBNAME_Giulia = "perizie";
+
+let transporter_Giulia = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+      user: 'noreply.rilieviperizie@gmail.com',
+      pass: 'dr0wss4p'
+    }
+});
+/* Giulia */
+
 //let _prefix = "http://localhost:1337";
 let _prefix = "https://palumbo-rilievi-e-perizie.herokuapp.com/"
 
@@ -194,6 +209,134 @@ app.post('/api/login', function (req, res, next) {
         }
     });
 });
+
+/* Inizio di Giulia */
+app.post('/api/loginGiulia', function(req, res, next) {
+    mongoClient.connect(CONNECTIONSTRING_Giulia, CONNECTIONOPTIONS_Giulia, function(err, client) {
+        if (err)
+        {
+            console.log("NO");
+            res.status(503).send("Database connection error.");
+        }
+        else
+        {
+            let db = client.db(DBNAME_Giulia);
+            let collection = db.collection('users');
+
+            let username = req.body.username;
+            let pwd = req.body.password;
+            //console.log("Username: " + username + " - Password: " + pwd);
+            collection.findOne({"username": username}, function(err, dbUser) {
+                if (err)
+                {
+                    res.status(500).send("Internal Error in Query Execution.");
+                }
+                else
+                {
+                    if (dbUser == null)
+                    {
+                        res.status(401).send("Email or password not correct.");
+                    }
+                    else
+                    {
+                        console.log(dbUser.username + "    " + dbUser.password);
+                        bcrypt.compare(pwd, dbUser.password, function(err, ok) {
+                            if (err)
+                            {
+                                res.status(500).send("Internal Error in bcrypt compare.");
+                            }
+                            else
+                            {
+                                if (!ok)
+                                {
+                                    console.log("UFFA")
+                                    res.status(401).send("Password not correct.");
+                                }
+                                else
+                                {
+                                    setTokenAndCookie(dbUser, res);
+                                    //res.send({"file":"../index.html", "gender":dbUser.gender});
+                                    res.send({"ris":"ok"});
+                                    /*let options = {
+                                        root: path.join(__dirname)
+                                    };
+                                    res.sendFile("static/index.html", options, function (err) {
+                                        if (err) {
+                                            next(err);
+                                        } else {
+                                            console.log('Sent:', "index.html");
+                                        }
+                                    });*/
+                                }
+                            }
+                        });
+                    }
+                }
+                client.close();
+            });
+        }
+    });
+});
+
+app.post("/api/signUpGiulia/", function(req, res, next){
+    mongoClient.connect(CONNECTIONSTRING_Giulia, CONNECTIONOPTIONS_Giulia, function(err, client){
+        if (err)
+        {
+            res.status(503).send("Database connection error.");
+        }
+        else
+        {
+            let username = req.body.username;
+            let mail = req.body.mail;
+            //GENERARE A CASO
+            let password = "prova";
+            let passwordCrypt = bcrypt.hashSync(CryptoJS.MD5(password).toString(), 10);
+
+            let db = client.db(DBNAME_Giulia);
+            let collection = db.collection('users');
+            collection.insertOne({"username": username, "mail": mail, "password": passwordCrypt},function(err,data){
+                if (err)
+                {
+                    res.status(500).send("Internal Error in Query Execution.");
+                }
+                else
+                {
+                    collection.findOne({"mail":mail}, function(err, data){
+                        if(err)
+                        {
+                            res.status(500).send("Internal server error.");
+                        }
+                        else
+                        {
+                            let mailOptions = {
+                                from: 'noreply.rilieviperizie@gmail.com',
+                                to: mail,
+                                subject: 'Your temporary password',
+                                //text: 'Prova' // invia il corpo in plaintext
+                                html: `<h1>Good!</h1><br><p>Your temporary pasword is ${password}.<br> Now you can Sign in."</p>`  // invia il corpo in html
+                            };
+
+                            // invio il messaggio
+                            transporter_Giulia.sendMail(mailOptions, function(error, info){
+                                if(error)
+                                {
+                                    res.send({"ris":"ok"});
+                                    console.log("Error on sending message:     "+ error);
+                                }
+                                else
+                                {
+                                    res.send({"ris":"ok"});
+                                }
+                            });
+                            client.close();
+                        }
+                    });
+                }
+            });
+        }
+    });
+});
+/* Fine di Giulia */
 
 app.post("/api/randomPW", function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
