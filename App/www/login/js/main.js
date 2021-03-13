@@ -124,8 +124,7 @@ $(document).ready(function () {
             });
             request.done(function (data) {
                 localStorage.setItem("SyphonCookie", data.ris);
-                window.location.reload();
-                console.log("Ciao");
+                window.location.href="index.html";
             });
         }
     }

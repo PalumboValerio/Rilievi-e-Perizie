@@ -9,6 +9,8 @@ $(document).ready(function () {
         if(!localStorage.getItem("SyphonCookie"))
         {
             window.location.href="login.html";
+            window.history.pushState([], "<name>", "<url>")
+            $ionicViewService.clearHistory();
         }
 
         let cameraOptions = {
@@ -29,6 +31,11 @@ $(document).ready(function () {
             cameraOptions.sourceType = Camera.PictureSourceType.CAMERA;
             cameraOptions.destinationType = Camera.DestinationType.DATA_URL;
             navigator.camera.getPicture(success, error, cameraOptions);
+        });
+
+        $("#btnLogout").on("click", function () {
+            localStorage.removeItem("SyphonCookie");
+            window.location.href="login.html";
         });
 
         /*$("#btnCerca").on("click", function(){
