@@ -23,6 +23,7 @@ $(document).ready(function () {
     });
 
     $('.txt2').on("click", function () {
+        let _this=$(this);
         if (pwContainer.is(":visible"))
         {
             swalMsg("Write the email address, we send to you a mail with your new password", "success", "Good!", {
@@ -33,7 +34,7 @@ $(document).ready(function () {
                     retArrow.show();
                 });
                 btn.text(buttons[1]);
-                newUser=this.hasAttribute("data-newuser");
+                newUser=_this.hasClass("newUser");
                 canLogin=false;
                 sendRequest=true;
             });
@@ -84,12 +85,31 @@ $(document).ready(function () {
         let thisAlert = $(input).parent();
 
         $(thisAlert).addClass('alert-validate');
+        if($(input).prop("name")=="pass")
+        {
+            $(".fa-eye").hide();
+        }
     }
 
     function hideValidate(input) {
         let thisAlert = $(input).parent();
 
         $(thisAlert).removeClass('alert-validate');
+        if($(input).prop("name")=="pass")
+        {
+            $(".fa-eye").show();
+        }
+    }
+
+    function onButtonClick(){
+        if(canLogin)
+        { 
+            login();
+        }
+        else if(sendRequest)
+        {
+            requested();
+        }
     }
 
     function login() {
@@ -116,20 +136,9 @@ $(document).ready(function () {
                 error(jqXHR, testStatus, strError)
             });
             request.done(function (data) {
-                localStorage.setItem("SyphonCookie", data.ris);
+                localStorage.setItem("SyphonCookie", data.ris.replace("token=", ""));
                 window.location.replace("index.html");
             });
-        }
-    }
-
-    function onButtonClick(){
-        if(canLogin)
-        { 
-            login();
-        }
-        else if(sendRequest)
-        {
-            requested();
         }
     }
 
@@ -141,37 +150,50 @@ $(document).ready(function () {
         }
         else
         {
+            let email=input.eq(0).val();
             if(!newUser)
             {
-                let requestMail=makeRequest("POST", "https://palumbo-rilievi-e-perizie.herokuapp.com/api/findMail/", {
-                "email": input.eq(0).val()
+                let request=makeRequest("GET", "https://palumbo-rilievi-e-perizie.herokuapp.com/api/findMail/", {
+                    "email": email
                 });
                 
-                requestMail.fail(error)
-                requestMail.done(function(data1){
-                    sendRandomPW(input.eq(0).val())
+                request.fail(error)
+                request.done(function(data){
+                    if(data.ris=="ok")
+                    {
+                        sendConfirmEmail(email);
+                    }
+                    else
+                    {
+                        swalMsg("This email address is not register yet", "error", "Error!", {
+                            cancel: false,
+                            confirm: "Close"
+                        })
+                    }
                 });
             }
             else
             {
-                //
+                sendConfirmEmail(email);
             }
         }
     }
 
-    function sendRandomPW(email)
+    function sendConfirmEmail(email)
     {
-        let requestPW = makeRequest("POST", "https://palumbo-rilievi-e-perizie.herokuapp.com/api/randomPW/", {
-            "email": email
+        let request = makeRequest("POST", "https://palumbo-rilievi-e-perizie.herokuapp.com/api/confirmEmail/",
+        {
+            "email": email,
+            "newUser": newUser
         });
 
-        requestPW.fail(error);
-        requestPW.done(function (data2) {
-            swalMsg("A new password was sent to your mailbox", "success", "Good!", {
+        request.fail(error);
+        request.done(function(data)
+        {
+            swalMsg("Confirm your identity to receive a new password! Check your mailbox", "success", "Good!", {
                 cancel: false,
                 confirm: "Close"
-            });
-            $("#pwContainer").css("display", "block");
+            })
         });
     }
 

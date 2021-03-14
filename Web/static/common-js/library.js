@@ -97,3 +97,16 @@ function getParameters()
     }
     return returnedParams;
 }
+
+function swalMsg(msg, icon, title, buttons, callback=null){
+    swal(msg, {
+        icon: icon,
+        title: title,
+        buttons: buttons
+    }).then((value) => {
+        if (typeof callback === 'function')
+        {
+            callback();
+        }
+    });
+}

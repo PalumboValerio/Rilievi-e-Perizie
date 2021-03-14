@@ -40,10 +40,12 @@ const DBNAME = "Rilievi-e-Perizie";
 
 // ************************************ nodemailer ************************************ \\
 const nodemailer = require("nodemailer");
+const handlebars = require('handlebars');
+const adminMail='syphon.ict@gmail.com';
 let transporter = nodemailer.createTransport({
     service: 'Gmail',
     auth: {
-        user: 'syphon.ict@gmail.com',
+        user: adminMail,
         pass: 'SyphonICT_2021'
     }
 });
@@ -165,9 +167,12 @@ app.use("/", fileupload({
 
 app.post('/api/login', function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
-        if (err) {
+        if (err) 
+        {
             res.status(503).send("Database connection error.");
-        } else {
+        } 
+        else 
+        {
             let db = client.db(DBNAME);
             let collection = db.collection('Users');
 
@@ -175,29 +180,44 @@ app.post('/api/login', function (req, res, next) {
             let pw = req.body.password;
             let admin = req.body.admin;
 
-            collection.findOne({
-                "email": mail
-            }, function (err, dbUser) {
-                if (err) {
+            collection.findOne({ "email" : mail }, 
+            function (err, dbUser) 
+            {
+                if (err) 
+                {
                     res.status(500).send("Internal Error in Query Execution.");
-                } else {
-                    if (dbUser == null) {
+                } 
+                else 
+                {
+                    if (dbUser == null) 
+                    {
                         res.status(401).send("Email or password not correct.");
-                    } else {
-                        bcrypt.compare(pw, dbUser.password, function (err, ok) {
-                            if (err) {
+                    } 
+                    else 
+                    {
+                        bcrypt.compare(pw, dbUser.password, function (err, isCorrect) {
+                            if (err) 
+                            {
                                 res.status(500).send("Internal Error in bcrypt compare.");
-                            } else {
-                                if (!ok) {
+                            } 
+                            else 
+                            {
+                                if (!isCorrect) 
+                                {
                                     res.status(401).send("Email or password not correct.");
-                                } else {
-                                    if ((admin && dbUser.admin) || !admin) {
+                                } 
+                                else 
+                                {
+                                    if ((admin && dbUser.admin) || !admin) 
+                                    {
                                         let cookie=setTokenAndCookie(dbUser, res);
                                         res.send({
                                             "ris": cookie
                                         });
                                         client.close();
-                                    } else {
+                                    } 
+                                    else 
+                                    {
                                         res.status(401).send("Access Denied");
                                     }
                                 }
@@ -338,61 +358,97 @@ app.post("/api/signUpGiulia/", function(req, res, next){
 });
 /* Fine di Giulia */
 
-app.post("/api/randomPW", function (req, res, next) {
-    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
-        if (err) {
+app.post("/api/confirmEmail/", function(req, res, next){
+    let email = req.body.email;
+    let newUser = req.body.newUser;
+
+    readHTMLFile(`${__dirname}/static/email.html`, function(html)
+    {
+        sendHtmlEmail(adminMail, email, 'Confirm your Email address', html, {
+            email: email,
+            newUser: newUser
+        });
+        res.send({"ris":"ok"});
+    });
+    
+});
+
+app.post("/api/signUp/", function(req, res, next)
+{
+    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function(err, client){
+        if (err)
+        {
             res.status(503).send("Database connection error.");
-        } else {
+        }
+        else
+        {
+            let email = req.body.email;
+            let rndpw = generateRandomPassword(10, true);
+            let pwCrypted=rndpw.syphonCrypt(10);
+
+            let db = client.db(DBNAME);
+            let collection = db.collection('Users');
+
+            collection.insertOne({"name" : "", "surname" : "", "email" : email, "password" : pwCrypted},
+            function(err,data)
+            {
+                if (err)
+                {
+                    res.status(500).send("Internal Error in Query Execution.");
+                }
+                else
+                {
+                    readHTMLFile(`${__dirname}/static/password.html`, function(html)
+                    {
+                        sendHtmlEmail(adminMail, email, 'Registration', html, { password: rndpw });
+                        res.send({"ris":"ok"});
+                        client.close();
+                    });
+                }
+            });
+        }
+    });
+});
+
+app.post("/api/forgotPW", function (req, res, next) {
+    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
+        if (err) 
+        {
+            res.status(503).send("Database connection error.");
+        } 
+        else
+        {
             let email = req.body.email;
 
             let db = client.db(DBNAME);
             let collection = db.collection('Users');
 
-            collection.findOne({
-                "email": email
-            }, function (err, data) {
-                if (err) {
+            collection.findOne({ "email" : email }, 
+            function (err, data) 
+            {
+                if (err) 
+                {
                     res.status(500).send("Internal server error.");
-                } else {
-                    let rndpw = generator.generate({
-                        length: 10,
-                        numbers: true
-                    });
-                    let pwCrypted = bcrypt.hashSync(CryptoJS.MD5(rndpw).toString(), 10);
-                    collection.updateOne({
-                        "email": email
-                    }, {
-                        "$set": {
-                            "password": pwCrypted
-                        }
-                    }, function (err, data) {
-                        if (err) {
-                            res.status(500).send("Internal server error.");
-                        } else {
-                            let mailOptions = {
-                                from: 'syphon.ict@gmail.com',
-                                to: email,
-                                subject: 'Random password',
-                                //text: 'Prova' // invia il corpo in plaintext
-                                html: `<h1>This is your new password: <b>${rndpw}<b></h1><br><p>Change it after login!
-                                       If you didn't ask for it, please change this password immediately!<br><br>Syphon team.</p>`
-                                // invia il corpo in html
-                            };
+                } 
+                else 
+                {
+                    let rndpw = generateRandomPassword(10, true);
+                    let pwCrypted=rndpw.syphonCrypt(10);
 
-                            // invio il messaggio
-                            transporter.sendMail(mailOptions, function (error, info) {
-                                if (error) {
-                                    res.send({
-                                        "ris": "ok"
-                                    });
-                                    console.log("Error on sending message:     " + error);
-                                } else {
-                                    res.send({
-                                        "ris": "ok"
-                                    });
-                                }
+                    collection.updateOne({ "email" : email }, { "$set": { "password": pwCrypted } }, 
+                    function (err, data) {
+                        if (err) 
+                        {
+                            res.status(500).send("Internal server error.");
+                        } 
+                        else 
+                        {
+                            readHTMLFile(`${__dirname}/static/password.html`, function(html)
+                            {
+                                sendHtmlEmail(adminMail, email, 'Forgot Password', html, { password: rndpw });
+                                res.send({"ris":"ok"});
+                                client.close();
                             });
-                            client.close();
                         }
                     });
                 }
@@ -403,23 +459,33 @@ app.post("/api/randomPW", function (req, res, next) {
 
 app.get("/api/findMail/", function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
-        if (err) {
+        if (err) 
+        {
             res.status(503).send("Database connection error.");
-        } else {
-            let mail = req.query.email;
+        } 
+        else 
+        {
+            let email = req.query.email;
 
             let db = client.db(DBNAME);
             let collection = db.collection('Users');
 
-            collection.findOne({
-                "email": mail
-            }, function (err, data) {
-                if (err) {
+            collection.findOne({ "email" : email }, function (err, data) 
+            {
+                if (err) 
+                {
                     res.status(500).send("Internal Error in Query Execution.");
-                } else {
-                    res.send({
-                        "ris": "ok"
-                    });
+                } 
+                else 
+                {
+                    if(data)
+                    {
+                        res.send({ "ris" : "ok" });
+                    }
+                    else
+                    {
+                        res.send({ "ris" : "nok" });
+                    }
                     client.close();
                 }
             });
@@ -717,6 +783,63 @@ function findUser(username, room) {
     return users.find(function (item) {
         return (item.username == username && item.room == room)
     });
+}
+
+function generateRandomPassword(lenght, isAlsoNumeric)
+{
+    return generator.generate({
+        length: lenght,
+        numbers: isAlsoNumeric
+    });
+}
+
+String.prototype.syphonCrypt = function(lenght){
+    return bcrypt.hashSync(CryptoJS.MD5(this).toString(), lenght);
+}
+
+function setEmail(from, to, subject, html){
+    return {
+        "from": from,
+        "to": to,
+        "subject": subject,
+        "html": html
+    };
+}
+
+function sendEmail(mailOptions)
+{
+    transporter.sendMail(mailOptions, function (error, info) {
+        if (error) 
+        {
+            res.send({ "ris" : "nok" });
+            console.log("Error on sending message:     " + error);
+        } 
+        else 
+        {
+            res.send({ "ris" : "ok" });
+        }
+    });
+}
+
+function readHTMLFile(path, callback) {
+    fs.readFile(path, {encoding: 'utf-8'}, function (err, html) {
+        if (err) 
+        {
+            res.status(404).send("File not found");
+        }
+        else 
+        {
+            callback(html);
+        }
+    });
+}
+
+function sendHtmlEmail(from, to, subject, html, templates)
+{
+    let template = handlebars.compile(html);
+    let htmlToSend = template(templates);
+    let mailOptions = setEmail(from, to, subject, htmlToSend);
+    sendEmail(mailOptions);
 }
 
 function checkToken(req, res, next) {

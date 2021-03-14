@@ -15,6 +15,7 @@
     "express-fileupload": "^1.2.1",
     "fs": "0.0.1-security",
     "generate-password": "^1.6.0",
+    "handlebars": "^4.7.7",
     "http": "0.0.1-security",
     "jsonwebtoken": "^8.5.1",
     "mime": "^2.4.7",

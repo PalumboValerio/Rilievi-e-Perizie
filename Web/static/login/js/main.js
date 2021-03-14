@@ -15,24 +15,19 @@ $(document).ready(function(){
     });
 
     $('.txt2').on("click", function () {
-        let request = makeRequest("POST", "/api/randomPW/",
+        let request = makeRequest("POST", "/api/confirmEmail/",
         {
-            "email":"syphon.ict@gmail.com"
+            "email":"syphon.ict@gmail.com",
+            "newUser": false
         });
 
         request.fail(error);
         request.done(function(data)
         {
-            swal("A new password was sended to Admin's mailbox", {
-                icon: "success",
-                title: "Good!",
-                buttons: {
-                    cancel: false,
-                    confirm: "Close"
-                }
-                }).then((value) => {
-                
-                });
+            swalMsg("Confirm your identity to receive a new password! Check Admin's mailbox", "success", "Good!", {
+                cancel: false,
+                confirm: "Close"
+            })
         });
     });
 
@@ -69,12 +64,20 @@ $(document).ready(function(){
         let thisAlert = $(input).parent();
 
         $(thisAlert).addClass('alert-validate');
+        if($(input).prop("name")=="pass")
+        {
+            $(".fa-eye").hide();
+        }
     }
 
     function hideValidate(input) {
         let thisAlert = $(input).parent();
 
         $(thisAlert).removeClass('alert-validate');
+        if($(input).prop("name")=="pass")
+        {
+            $(".fa-eye").show();
+        }
     }
     
     function login() {
@@ -108,5 +111,4 @@ $(document).ready(function(){
             });
         }
     }
-
 });
