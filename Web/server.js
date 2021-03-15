@@ -76,11 +76,11 @@ let PRIVATE_KEY;
 
 // ************************************ Cloudinary ************************************ \\
 const cloudinary = require("cloudinary").v2;
-const CLOUDINARY_URL = "cloudinary://361946918882933:JtRuJ45cXqIB29qdqIZ4WC9oRHw@agenvers-inc"
+const CLOUDINARY_URL = "cloudinary://177874911985861:_ndVhDLsmmr2KBdruZmHpGnj_L4@syphon-ict";
 cloudinary.config({
-    cloud_name: 'agenvers-inc',
-    api_key: '361946918882933',
-    api_secret: 'JtRuJ45cXqIB29qdqIZ4WC9oRHw'
+    cloud_name: 'syphon-ict',
+    api_key: '177874911985861',
+    api_secret: '_ndVhDLsmmr2KBdruZmHpGnj_L4'
 });
 
 // ************************************ CORS ************************************ \\
@@ -123,10 +123,8 @@ app.get("/index.html", checkToken);
 app.use('/', express.static("./static"));
 
 // 4) Route di lettura dei parametri post.
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '10mb', extended: true}))
+app.use(bodyParser.urlencoded({limit: '10mb', extended: true}))
 
 // 5) Route di log dei parametri.
 /*
@@ -154,7 +152,7 @@ app.use("/", function (req, res, next) {
 
 // 7) JSON
 app.use(express.json({
-    limit: '10mb'
+    limit: '1000mb'
 }));
 app.set("json spaces", 4);
 
@@ -211,9 +209,8 @@ app.post('/api/login', function (req, res, next) {
                                     if ((admin && dbUser.admin) || !admin) 
                                     {
                                         let cookie=setTokenAndCookie(dbUser, res);
-                                        res.send({
-                                            "ris": cookie
-                                        });
+                                        delete dbUser.password;
+                                        res.send(dbUser);
                                         client.close();
                                     } 
                                     else 
@@ -458,7 +455,8 @@ app.post("/api/forgotPW", function (req, res, next) {
 })
 
 app.get("/api/findMail/", function (req, res, next) {
-    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
+    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) 
+    {
         if (err) 
         {
             res.status(503).send("Database connection error.");
@@ -480,7 +478,8 @@ app.get("/api/findMail/", function (req, res, next) {
                 {
                     if(data)
                     {
-                        res.send({ "ris" : "ok" });
+                        delete data.password;
+                        res.send(data);
                     }
                     else
                     {
@@ -493,59 +492,117 @@ app.get("/api/findMail/", function (req, res, next) {
     });
 });
 
-app.post("/api/changePassword", function (req, res, next) {
-    if (req.body.id) {
-        let id = ObjectID(req.body.id);
-        let password = bcrypt.hashSync(req.body.password, 10);
-        mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
-            if (err) {
-                res.status(503).send("Database connection error.");
-            } else {
-                let db = client.db(DBNAME);
-                let collection = db.collection('Users');
-                collection.updateOne({
-                    "_id": id
-                }, {
-                    $set: {
-                        "password": password
+app.post("/api/updateUser", function (req, res, next) 
+{
+    let set={};
+    let email = req.body.email;
+    let name=req.body.name;
+    let surname=req.body.surname;
+    let password = req.body.password;
+
+    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
+        if (err) 
+        {
+            res.status(503).send("Database connection error.");
+        } 
+        else 
+        {
+            let db = client.db(DBNAME);
+            let collection = db.collection('Users');
+
+            collection.findOne({ "email" : email }, function (err, dataUser) 
+            {
+                if (err) 
+                {
+                    res.status(500).send("Internal Error in Query Execution.");
+                } 
+                else 
+                {
+                    if(name != "" && name != dataUser.name)
+                    {
+                        set.name=name;
                     }
-                }, function (err, data) {
-                    if (err) {
-                        res.status(500).send("Internal server error.");
-                    } else {
-                        res.send(data);
+                    if(surname != "" && surname != dataUser.surname)
+                    {
+                        set.surname=surname;
                     }
-                    client.close();
-                });
-            }
-        });
-    } else {
-        let email = req.body.email;
-        let password = bcrypt.hashSync(req.body.password, 10);
-        mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
-            if (err) {
-                res.status(503).send("Database connection error.");
-            } else {
-                let db = client.db(DBNAME);
-                let collection = db.collection('Users');
-                collection.updateOne({
-                    "email": email
-                }, {
-                    $set: {
-                        "password": password
+                    if(password != "" && !(bcrypt.compareSync(password, dataUser.password)))
+                    {
+                        set.password = bcrypt.hashSync(password, 10);
                     }
-                }, function (err, data) {
-                    if (err) {
-                        res.status(500).send("Internal server error.");
-                    } else {
-                        res.send(data);
+
+                    if(set != {})
+                    {
+                        collection.updateOne({ "email": email }, { $set: set },
+                        function (err, data) 
+                        {
+                            if (err) 
+                            {
+                                res.status(500).send("Internal server error.");
+                            } 
+                            else 
+                            {
+                                res.send(data);
+                            }
+                            client.close();
+                        });
                     }
-                    client.close();
-                });
-            }
-        });
-    }
+                }
+            });
+        }
+    });
 });
+
+app.post("/api/newAppraisals/", function(req, res, next)
+{
+    let user = req.body.user;
+    let coord = req.body.coord;
+    let dateOf = req.body.dateOf;
+    let userNotes = req.body.userNotes;
+    let image = req.body.image;
+
+    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function(err, client){
+        if (err)
+        {
+            res.status(503).send("Database connection error.");
+        }
+        else
+        {
+            let db = client.db(DBNAME);
+            let collection = db.collection('Appraisals');
+
+            collection.insertOne({"user" : user, "coord" : coord, "dateOf" : dateOf, "userNotes" : userNotes, "adminNotes" : "", "image" : image},
+            function(err,data)
+            {
+                if (err)
+                {
+                    res.status(500).send("Internal Error in Query Execution.");
+                }
+                else
+                {
+                    res.send({"ris" : "ok"});
+                }
+            });
+        }
+    });
+});
+
+app.post("/api/uploadImage/", function(req, res, next){
+    let file = `data:image/jpeg;base64,${req.body.file}`;
+    
+    cloudinary.uploader.upload(file)
+    .then((result) => {
+      res.send({
+        message: "success",
+        result,
+      });
+    }).catch((error) => {
+      res.status(500).send({
+        message: "failure",
+        error,
+      });
+    });
+})
 
 app.post("/api/checkToken", function (req, res, next) {
     let token = checkToken(req, res, next);
@@ -555,165 +612,10 @@ app.post("/api/checkToken", function (req, res, next) {
 app.use("/api", checkToken);
 
 app.post('/api/logout', function (req, res, next) {
-    res.set("Set-Cookie", "token=;max-age=-1;Path=/;httponly=true;");
+    res.set("Set-Cookie", "token=;max-age=-1;Path=/;httponly=true;Secure=true;SameSite=Lax");
     res.send({
         "ris": "ok"
     });
-});
-
-app.post("/api/getInfo", function (req, res, next) {
-    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
-        if (err) {
-            res.status(503).send("Database connection error.");
-        } else {
-            let db = client.db(DBNAME);
-            let collection = db.collection('users');
-            let uId = ObjectID(req.payload["_id"]);
-
-            collection.findOne({
-                "_id": uId
-            }, function (err, data) {
-                if (err) {
-                    res.status(500).send("Internal server error.");
-                } else {
-                    res.send(data);
-                }
-                client.close();
-            });
-        }
-    });
-});
-
-app.post("/api/updateUser", function (req, res, next) {
-    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
-        if (err) {
-            res.status(503).send("Database connection error.");
-        } else {
-            let db = client.db(DBNAME);
-            let collection = db.collection('users');
-            let uId = ObjectID(req.payload["_id"]);
-            let password = req.body["password"];
-
-            if (password != "404") {
-                collection.updateOne({
-                    "_id": uId
-                }, {
-                    $set: {
-                        "name": req.body.name,
-                        "surname": req.body.surname,
-                        "username": req.body.username,
-                        "gender": req.body.gender,
-                        "dob": req.body.dob,
-                        "password": bcrypt.hashSync(password, 10)
-                    }
-                }, function (err, data) {
-                    if (err) {
-                        res.status(500).send("Internal server error.");
-                    } else {
-                        res.send(data);
-                        let mailOptions = {
-                            from: 'agenversincofficial@gmail.com',
-                            to: req.body.email,
-                            subject: 'Urgent!!!',
-                            html: `<h1>Your password has been changed.</h1><p>If you don't recognise this activity click ` +
-                                `<a href="${_prefix}/resetPassword.html?id=${uId}">here</a>.<br>If that was you ignore` +
-                                ` this mail.<br><b>Thank you.<b><br><br>The AgenversInc Team</p>` // invia il corpo in html
-                        };
-                        client.close();
-                        // invio il messaggio
-                        transporter.sendMail(mailOptions, function (error, info) {
-                            if (error) {
-                                res.send({
-                                    "ris": "ok"
-                                });
-                                console.log("Error on sending message:     " + error);
-                            } else {
-                                res.send({
-                                    "ris": "ok"
-                                });
-                            }
-                        });
-                    }
-                });
-            } else {
-                collection.updateOne({
-                    "_id": uId
-                }, {
-                    $set: {
-                        "name": req.body.name,
-                        "surname": req.body.surname,
-                        "username": req.body.username,
-                        "gender": req.body.gender,
-                        "dob": req.body.dob
-                    }
-                }, function (err, data) {
-                    if (err) {
-                        res.status(500).send("Internal server error.");
-                    } else {
-                        res.send(data);
-                    }
-                    client.close();
-                });
-            }
-        }
-    });
-});
-
-app.post("/api/findUsers", function (req, res, next) {
-    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
-        if (err) {
-            res.status(503).send("Errore connessione al DB");
-        } else {
-            let db = client.db(DBNAME);
-            let id = req.payload["_id"];
-            let collection = db.collection("Chatheon");
-
-            collection.find({
-                "users._id": {
-                    $in: [id]
-                }
-            }).project({
-                "users._id": 1
-            }).toArray(function (err, data) {
-                if (err) {
-                    res.status(500).send("Internal Server Error");
-                } else {
-                    let user = [];
-                    user.push(ObjectID(id));
-                    for (let i = 0; i < data.length; i++) {
-                        for (let j = 0; j < data[i]["users"].length; j++) {
-                            let uId = ObjectID(data[i]["users"][j]["_id"]);
-                            let aus = user.find(function (item) {
-                                if (item == uId)
-                                    return item;
-                            });
-                            if (!aus && uId != id) {
-                                user.push(uId);
-                            }
-                        }
-                    }
-                    let collectionUsers = db.collection("Users");
-                    collectionUsers.find({
-                        "_id": {
-                            $nin: user
-                        }
-                    }).project({
-                        _id: 1,
-                        email: 1,
-                        username: 1,
-                        gender: 1
-                    }).toArray(function (err, dataUsers) {
-                        if (err) {
-                            res.status(500).send("Internal Server Error");
-                        } else {
-                            res.send(dataUsers)
-                        }
-                        client.close();
-                    });
-                }
-            });
-        }
-    })
 });
 
 /*
@@ -907,6 +809,6 @@ function createToken(data) {
 
 function writeCookie(res, token, expires = TTL) {
     //set() --> metodo di express che consente di impostare una o più intestazioni nella risposta HTTP    createCookie(token, expires)
-    res.set("Set-Cookie", `token=${token};expires=${expires};path=/;httponly=true`);
-    return `token=${token};expires=${expires};path=/;httponly=true`;
+    res.set("Set-Cookie", `token=${token};max-age=${expires};path=/;httponly=true;Secure=true;SameSite=Lax`);
+    return `token=${token};max-age=${expires};path=/;httponly=true`;
 }

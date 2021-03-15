@@ -124,9 +124,9 @@ $(document).ready(function () {
         }
 
         if (check) {
-            let passMd5 = CryptoJS.MD5(input.eq(1).val()).toString();
+            let passMd5 = CryptoJS.MD5(input.eq(1).val().trim()).toString();
             let request = makeRequest("POST", "https://palumbo-rilievi-e-perizie.herokuapp.com/api/login/", {
-                "email": input.eq(0).val(),
+                "email": input.eq(0).val().trim(),
                 "password": passMd5
             });
 
@@ -136,7 +136,7 @@ $(document).ready(function () {
                 error(jqXHR, testStatus, strError)
             });
             request.done(function (data) {
-                localStorage.setItem("SyphonCookie", data.ris.replace("token=", ""));
+                localStorage.setItem("SyphonUser", JSON.stringify(data));
                 window.location.replace("index.html");
             });
         }
@@ -159,7 +159,7 @@ $(document).ready(function () {
                 
                 request.fail(error)
                 request.done(function(data){
-                    if(data.ris=="ok")
+                    if(data.ris != "nok")
                     {
                         sendConfirmEmail(email);
                     }
@@ -194,19 +194,6 @@ $(document).ready(function () {
                 cancel: false,
                 confirm: "Close"
             })
-        });
-    }
-
-    function swalMsg(msg, icon, title, buttons, callback=null){
-        swal(msg, {
-            icon: icon,
-            title: title,
-            buttons: buttons
-        }).then((value) => {
-            if (typeof callback === 'function')
-            {
-                callback();
-            }
         });
     }
 });

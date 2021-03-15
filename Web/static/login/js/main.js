@@ -96,10 +96,10 @@ $(document).ready(function(){
         }
         else
         {
-            let passMd5 = CryptoJS.MD5(input.eq(1).val()).toString();
+            let passMd5 = CryptoJS.MD5(input.eq(1).val().trim()).toString();
             let request = makeRequest("POST", "/api/login/",
             {
-                "email":input.eq(0).val(),
+                "email":input.eq(0).val().trim(),
                 "password":passMd5,
                 "admin":true
             });
