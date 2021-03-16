@@ -1,5 +1,6 @@
 $(document).ready(function () {
     document.addEventListener('deviceready', function () { 
+        /**************** START *********************/
         let email=$("#email");
         let name=$("#name");
         let surname=$("#surname");
@@ -11,10 +12,12 @@ $(document).ready(function () {
         let txtCoords=$("#input_9");
         let txtDateTime=$("#input_11");
         let txtNotes=$("#input_8");
+        let images=[];
 
-        let btnPhoto=$("#btnPhoto");
+        let btnAppraisals=$("#btnAppraisals");
         let btnUser=$("#btnUser");
         let btnSubmit=$("#btnSubmit");
+        let btnPhoto=$("#btnPhoto");
 
         if(!localStorage.getItem("SyphonUser"))
         {
@@ -33,24 +36,80 @@ $(document).ready(function () {
             maximumAge: 0
         };
 
+        /**************** FORM *********************/
+
         $(".close").on("click", function(){
             form.css("display", "none");
         })
 
-        btnPhoto.on("click", function () {
+        btnAppraisals.on("click", function () {
             $(this).prop("disabled", true);
+
+            navigator.geolocation.getCurrentPosition(function (pos) 
+            {
+                txtCoords.val(`Lat: ${pos.coords.latitude} | Lon: ${pos.coords.longitude}`);
+                txtDateTime.val((new Date).toISOString());
+
+                form.css("display", "block");
+                btnAppraisals.prop("disabled", false);
+
+            }, errore, gpsOptions);
+        });
+
+        btnPhoto.on("click", function()
+        {
             cameraOptions.sourceType = Camera.PictureSourceType.CAMERA;
             cameraOptions.destinationType = Camera.DestinationType.DATA_URL;
             navigator.camera.getPicture(success, errore, cameraOptions);
+        })
+
+        $(".toggle-password").on("click", function () {
+
+            $(this).toggleClass("fa-eye fa-eye-slash");
+            let input=$(this).siblings();
+            if (input.prop("type") == "password") 
+            {
+                input.prop("type", "text");
+            } else 
+            {
+                input.prop("type", "password");
+            }
         });
 
-        $("#btnLogout").on("click", function () {
-            localStorage.removeItem("SyphonUser");
-            window.location.replace("login.html");
-        });
-
-        btnUser.on("click", function () {
+        btnSubmit.on("click", function(){
             $(this).prop("disabled", true);
+
+            let requestAppraisals=makeRequest("POST", "https://palumbo-rilievi-e-perizie.herokuapp.com/api/newAppraisals/", {
+                "user" : txtEmail.val(),
+                "coord" : txtCoords.val(),
+                "dateOf" : txtDateTime.val(),
+                "userNotes" : txtNotes.val(),
+                "image" : images
+            });
+            
+            requestAppraisals.fail(function(jqXHR, testStatus, strError){
+                btnSubmit.prop("disabled", false);
+                error(jqXHR, testStatus, strError);
+            });
+
+            requestAppraisals.done(function(data){
+                swalMsg("Your appraisals was uploaded", "success", "Good!", {
+                    cancel: false,
+                    confirm: "Close"
+                }, function(){
+                    txtNotes.val("");
+                    form.css("display", "none");
+                    btnSubmit.prop("disabled", false);
+                })
+            });
+        });
+
+        /**************** MAIN *********************/
+
+        btnUser.on("click", function () 
+        {
+            $(this).prop("disabled", true);
+
             if(newPW.val().trim() == confPW.val().trim())
             {
                 let passMd5;
@@ -99,78 +158,28 @@ $(document).ready(function () {
             }
         });
 
-        $(".toggle-password").on("click", function () {
-
-            $(this).toggleClass("fa-eye fa-eye-slash");
-            let input=$(this).siblings();
-            if (input.prop("type") == "password") 
-            {
-                input.prop("type", "text");
-            } else 
-            {
-                input.prop("type", "password");
-            }
+        $("#btnLogout").on("click", function () {
+            localStorage.removeItem("SyphonUser");
+            window.location.replace("login.html");
         });
 
-        /*$("#btnCerca").on("click", function(){
-            cameraOptions.sourceType=Camera.PictureSourceType.SAVEDPHOTOALBUM;
-            cameraOptions.destinationType=Camera.DestinationType.DATA_URL;
-            navigator.camera.getPicture(success, error, cameraOptions);
-        });*/
+        /**************** FUNCTION *********************/
 
         function success(image) {
             $("#img_14").prop("src", `data:image/jpeg;base64,${image}`);
-            let date = new Date();
-            // Codice/Mail operatore da reperire dal db. Dopo il login riuscito, salvarsi la mail
-            // Note mediante una comparsa di una form che conterrà preview della foto scattata, 
-            // posizione, data e ora e una input box per un eventuale commento facoltativo
-            navigator.geolocation.getCurrentPosition(function (pos) {
-                // Appare la form con la conferma dell'inserimento. Premendo su conferma si chiama il
-                // server e gli si passano i dati per inserire nel db la nuova perizia
-                txtCoords.val(`Lat: ${pos.coords.latitude} - Lon: ${pos.coords.longitude}`);
-                txtDateTime.val(date.toISOString());
+            
+            let requestImage=makeRequest("POST", "https://palumbo-rilievi-e-perizie.herokuapp.com/api/uploadImage/", {
+                "file" : image
+            });
+            
+            requestImage.fail(function(jqXHR, testStatus, strError){
+                btnSubmit.prop("disabled", false);
+                error(jqXHR, testStatus, strError);
+            });
 
-                form.css("display", "block");
-                btnPhoto.prop("disabled", false);
-
-                btnSubmit.on("click", function(){
-                    $(this).prop("disabled", true);
-                    let requestImage=makeRequest("POST", "https://palumbo-rilievi-e-perizie.herokuapp.com/api/uploadImage/", {
-                        "file" : image
-                    });
-                    
-                    requestImage.fail(function(jqXHR, testStatus, strError){
-                        btnSubmit.prop("disabled", false);
-                        error(jqXHR, testStatus, strError);
-                    });
-
-                    requestImage.done(function(result){
-                        let requestAppraisals=makeRequest("POST", "https://palumbo-rilievi-e-perizie.herokuapp.com/api/newAppraisals/", {
-                            "user" : txtEmail.val(),
-                            "coord" : txtCoords.val(),
-                            "dateOf" : txtDateTime.val(),
-                            "userNotes" : txtNotes.val(),
-                            "image" : result["result"]["secure_url"]
-                        });
-                        
-                        requestAppraisals.fail(function(jqXHR, testStatus, strError){
-                            btnSubmit.prop("disabled", false);
-                            error(jqXHR, testStatus, strError);
-                        });
-
-                        requestAppraisals.done(function(data){
-                            swalMsg("Your appraisals was uploaded", "success", "Good!", {
-                                cancel: false,
-                                confirm: "Close"
-                            }, function(){
-                                txtNotes.val("");
-                                form.css("display", "none");
-                                btnSubmit.prop("disabled", false);
-                            })
-                        });
-                    });
-                })
-            }, errore, gpsOptions);
+            requestImage.done(function(result){
+                images.push(result["result"]["secure_url"]);
+            });
         }
 
         function errore(err) {
@@ -180,7 +189,7 @@ $(document).ready(function () {
                     confirm: "Close"
                 })
             }
-            btnPhoto.prop("disabled", false);
+            btnAppraisals.prop("disabled", false);
             btnSubmit.prop("disabled", false);
         }
 

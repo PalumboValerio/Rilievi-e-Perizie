@@ -602,7 +602,7 @@ app.post("/api/uploadImage/", function(req, res, next){
         error,
       });
     });
-})
+});
 
 app.post("/api/checkToken", function (req, res, next) {
     let token = checkToken(req, res, next);
@@ -615,6 +615,40 @@ app.post('/api/logout', function (req, res, next) {
     res.set("Set-Cookie", "token=;max-age=-1;Path=/;httponly=true;Secure=true;SameSite=Lax");
     res.send({
         "ris": "ok"
+    });
+});
+
+app.post("/api/takeAppraisals", function (req, res, next) 
+{
+    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
+        if (err) 
+        {
+            res.status(503).send("Database connection error.");
+        } 
+        else 
+        {
+            let db = client.db(DBNAME);
+            let collection = db.collection('Appraisals');
+
+            collection.find({ }).toArray(function (err, datas) 
+            {
+                if (err) 
+                {
+                    res.status(500).send("Internal Error in Query Execution.");
+                } 
+                else 
+                {
+                    if(datas.length > 0)
+                    {
+                        res.send({"ris": datas});
+                    }
+                    else
+                    {
+                        res.send({"ris": "nok"});
+                    }
+                }
+            });
+        }
     });
 });
 
