@@ -12,9 +12,7 @@ $(document).ready(function () {
 
     let buttons=["Login", "Send request"];
 
-    btn.on('click', function () {
-        onButtonClick();
-    });
+    btn.on('click', onButtonClick);
 
     $(document).on('keydown', function (e) {
         if (e.keyCode == 13) {
@@ -41,15 +39,7 @@ $(document).ready(function () {
         }
     });
 
-    retArrow.on("click", function(){
-        retArrow.fadeOut(400, function(){
-            pwContainer.show(700);
-        });
-        btn.text(buttons[0]);
-        newUser=false;
-        canLogin=true;
-        sendRequest=false;
-    })
+    retArrow.on("click", turnLogin);
 
     $(".toggle-password").on("click", function () {
 
@@ -193,7 +183,19 @@ $(document).ready(function () {
             swalMsg("Confirm your identity to receive a new password! Check your mailbox", "success", "Good!", {
                 cancel: false,
                 confirm: "Close"
-            })
+            });
+            turnLogin();
         });
+    }
+
+    function turnLogin()
+    {
+        retArrow.fadeOut(400, function(){
+            pwContainer.show(700);
+        });
+        btn.text(buttons[0]);
+        newUser=false;
+        canLogin=true;
+        sendRequest=false;
     }
 });

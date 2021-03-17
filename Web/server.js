@@ -225,7 +225,7 @@ app.post("/api/confirmEmail/", function(req, res, next){
             email: email,
             newUser: newUser
         });
-        res.send({"ris":"ok"});
+        res.send({"ris" : "ok"});
     });
     
 });
@@ -372,7 +372,7 @@ app.post("/api/updateUser", function (req, res, next)
 
             collection.findOne({ "email" : email }, function (err, dataUser) 
             {
-                if (err) 
+                if (err)
                 {
                     res.status(500).send("Internal Error in Query Execution.");
                 } 
@@ -410,6 +410,7 @@ app.post("/api/updateUser", function (req, res, next)
                     else
                     {
                         res.send({"ris":"nok"});
+                        client.close();
                     }
                 }
             });
@@ -465,6 +466,7 @@ app.post("/api/changeAdminPW", function (req, res, next)
                     else
                     {
                         res.send({"ris":"nok"});
+                        client.close();
                     }
                 }
             });
@@ -543,6 +545,7 @@ app.post("/api/newAppraisals/", function(req, res, next)
                 {
                     res.send({"ris" : "ok"});
                 }
+                client.close();
             });
         }
     });
@@ -574,9 +577,7 @@ app.use("/api", checkToken);
 
 app.post('/api/logout', function (req, res, next) {
     res.set("Set-Cookie", "token=;max-age=-1;Path=/;httponly=true;Secure=true;SameSite=Lax");
-    res.send({
-        "ris" : "ok"
-    });
+    res.send({ "ris" : "ok" });
 });
 
 app.post("/api/takeAppraisals", function (req, res, next) 
@@ -607,6 +608,7 @@ app.post("/api/takeAppraisals", function (req, res, next)
                     {
                         res.send({"ris": "nok"});
                     }
+                    client.close();
                 }
             });
         }
@@ -615,7 +617,6 @@ app.post("/api/takeAppraisals", function (req, res, next)
 
 app.post("/api/adminComment/", function(req, res, next)
 {
-    let set={};
     let id = ObjectID(req.body.id);
     let comment = req.body.comment;
 
@@ -679,6 +680,7 @@ app.post("/api/deleteAppraisals/", function(req, res, next)
                 else 
                 {
                     res.send({"ris" : "ok"});
+                    client.close();
                 }
             });
         }

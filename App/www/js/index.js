@@ -40,6 +40,7 @@ $(document).ready(function () {
 
         $(".close").on("click", function(){
             form.css("display", "none");
+            images = [];
         })
 
         btnAppraisals.on("click", function () {
@@ -67,7 +68,7 @@ $(document).ready(function () {
 
             $(this).toggleClass("fa-eye fa-eye-slash");
             let input=$(this).siblings();
-            if (input.prop("type") == "password") 
+            if (input.prop("type") == "password")
             {
                 input.prop("type", "text");
             } else 
@@ -77,31 +78,42 @@ $(document).ready(function () {
         });
 
         btnSubmit.on("click", function(){
-            $(this).prop("disabled", true);
+            if(images.length > 0)
+            {
+                $(this).prop("disabled", true);
 
-            let requestAppraisals=makeRequest("POST", "https://palumbo-rilievi-e-perizie.herokuapp.com/api/newAppraisals/", {
-                "user" : txtEmail.val(),
-                "coord" : txtCoords.val(),
-                "dateOf" : txtDateTime.val(),
-                "userNotes" : txtNotes.val(),
-                "image" : images
-            });
-            
-            requestAppraisals.fail(function(jqXHR, testStatus, strError){
-                btnSubmit.prop("disabled", false);
-                error(jqXHR, testStatus, strError);
-            });
+                let requestAppraisals=makeRequest("POST", "https://palumbo-rilievi-e-perizie.herokuapp.com/api/newAppraisals/", {
+                    "user" : txtEmail.val(),
+                    "coord" : txtCoords.val(),
+                    "dateOf" : txtDateTime.val(),
+                    "userNotes" : txtNotes.val(),
+                    "image" : images
+                });
+                
+                requestAppraisals.fail(function(jqXHR, testStatus, strError){
+                    btnSubmit.prop("disabled", false);
+                    error(jqXHR, testStatus, strError);
+                });
 
-            requestAppraisals.done(function(data){
-                swalMsg("Your appraisals was uploaded", "success", "Good!", {
+                requestAppraisals.done(function(data){
+                    swalMsg("Your appraisals was uploaded", "success", "Good!", {
+                        cancel: false,
+                        confirm: "Close"
+                    }, function(){
+                        txtNotes.val("");
+                        form.css("display", "none");
+                        btnSubmit.prop("disabled", false);
+                        images=[];
+                    })
+                });
+            }
+            else
+            {
+                swalMsg("You must upload an image first", "error", "Error!", {
                     cancel: false,
                     confirm: "Close"
-                }, function(){
-                    txtNotes.val("");
-                    form.css("display", "none");
-                    btnSubmit.prop("disabled", false);
-                })
-            });
+                });
+            }
         });
 
         /**************** MAIN *********************/
