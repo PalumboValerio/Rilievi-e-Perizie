@@ -21,7 +21,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
   <script src="common-js/index.js"></script>
   <script src="common-js/library.js"></script>
-  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 
   <style type="text/css">
     h1 {
@@ -114,6 +114,15 @@
       border-top: 0;
     }
 
+    .panel-default{
+      width: 100%;
+    }
+
+    .control-label{
+      text-align: left;
+      margin-left: 0;
+    }
+
     .panel-default>.panel-heading {
       color: #333333;
       background-color: transparent;
@@ -132,7 +141,7 @@
 
     @media (min-width: 768px) {
       .form-horizontal .control-label {
-        text-align: right;
+        text-align: left;
         margin-bottom: 0;
         padding-top: 7px;
       }
@@ -150,22 +159,70 @@
       color: #999999;
     }
 
-    .profile-avatar {
-      width: 200px;
+    #carousel{
+      margin: 0 auto;
+    }
+
+        /* The Modal (background) */
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 1; /* Sit on top */
+      left: 50%;
+      top: 50%;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      overflow: auto; /* Enable scroll if needed */
+      background-color: transparent; /* Fallback color */
+      transform: translate(-50%, -50%);
+    }
+
+    .modal::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Modal Content/Box */
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto; /* 15% from the top and centered */
+      margin-left: 20%;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 100%; /* Could be more or less, depending on screen size */
+    }
+
+    /* The Close Button */
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .field-icon {
+      float: right;
+      margin-right: 10px;
+      margin-top: -28px;
       position: relative;
-      margin: 0px auto;
-      margin-top: 196px;
-      border: 4px solid #f2f2f2;
+      z-index: 2;
     }
   </style>
 </head>
 
 
-<!-- ----------------------------  BODY  ----------------------------- -->
+<!-- ----------------------------  NAVBAR AREA ----------------------------- -->
 
-<body>
+<body class="noselect">
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
+      <i id="return" style="color: white; margin-right: 1%; display: none;" class="navbar-toggle collapsed fas fa-long-arrow-alt-left" data-toggle="collapse" aria-hidden="true"></i>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo01"
         aria-controls="navbarTogglerDemo01" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -173,42 +230,33 @@
       <div class="collapse navbar-collapse" id="navbarTogglerDemo01">
         <img style="width: 3%;" src="common-img/logo_short.png">
         <h1 class="navbar-brand noselect">Syphon ICT</h1>
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="#">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">Link</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
-          </li>
-        </ul>
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0"></ul>
         <form class="d-flex">
+          <button class="btn btn-warning" id="btnOpenChangePw" style="width:auto;">Change Password</button>&nbsp;
+          <button class="btn btn-success" id="btnCreateUser" style="width:auto;">Create User</button>&nbsp;
           <button class="btn btn-danger" id="btnLogout" style="width:auto;">Logout</button>
         </form>
       </div>
     </div>
   </nav>
 
-  <h1> Visualizza Percorso </h1>
-  <div id="header">
-    <label> partenza <input type="text" value="cuneo"> </label> &nbsp;&nbsp;
-    <label> arrivo <input type="text" value="torino"> </label>
-    <input type="button" value="visualizza percorso">
-  </div>
+  <!-- ----------------------------  MAP AREA  ----------------------------- -->
+
   <div id="wrapper">
-    <div class="map"> </div>
-    <div class="panel"></div>
-    <div class="msg"> </div>
+    <div class="map"></div>
+    <div class="panel" style="background-color: white;"></div>
+    <div class="msg" style="background-color: white;"></div>
   </div>
 
-  <div class="container bootstrap snippets bootdeys" id="dataContainer" style="width: 95%;">
+  <!-- ----------------------------  FIRST MODAL AREA  ----------------------------- -->
+
+  <div class="container bootstrap snippets bootdeys modal" id="dataContainer">
     <div class="row">
       <div class="col-xs-12 col-sm-9">
-        <form class="form-horizontal">
-
-          <div id="carouselExampleControls" class="carousel slide w-100" data-ride="carousel">
+        <form class="form-horizontal modal-content">
+          
+          <span class="close" id="closeFirst">&times;</span>
+          <div id="carousel" class="carousel slide w-50" data-bs-ride="carousel">
             <div class="carousel-inner">
               <!--div class="carousel-item active">
                 <img class="d-block w-100" src="..." alt="First slide">
@@ -220,14 +268,14 @@
                 <img class="d-block w-100" src="..." alt="Third slide">
               </div-->
             </div>
-            <a class="carousel-control-prev" href="#carouselExampleControls" role="button" data-slide="prev">
+            <button class="carousel-control-prev" type="button" data-bs-target="#carousel"  data-bs-slide="prev">
               <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-              <span class="sr-only">Previous</span>
-            </a>
-            <a class="carousel-control-next" href="#carouselExampleControls" role="button" data-slide="next">
+              <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carousel"  data-bs-slide="next">
               <span class="carousel-control-next-icon" aria-hidden="true"></span>
-              <span class="sr-only">Next</span>
-            </a>
+              <span class="visually-hidden">Next</span>
+            </button>
           </div>
 
           <br>
@@ -270,7 +318,7 @@
                 </div>
               </div>
               <div class="form-group">
-                <label class="col-sm-2 control-label">Admin comment</label>
+                <label class="col-sm-2 control-label">Your comment</label>
                 <div class="col-sm-10">
                   <textarea class="form-control" id="adminCmt" rows="3"></textarea>
                 </div>
@@ -278,7 +326,8 @@
               <br>
               <div class="form-group">
                 <div class="col-sm-10 col-sm-offset-2">
-                  <button id="btnUpdate" type="button" class="btn btn-success">Update</button>
+                  <button id="btnUpdate" type="button" class="btn btn-success mr-1">Update</button>
+                  <button id="btnPath" type="button" class="btn btn-primary mr-1">See path</button>
                   <button id="btnDelete" type="button" class="btn btn-danger">Delete</button>
                 </div>
               </div>
@@ -288,6 +337,88 @@
       </div>
     </div>
   </div>
+
+  <!-- ----------------------------  SECOND MODAL AREA  ----------------------------- -->
+  <div class="container bootstrap snippets bootdeys modal" id="changePW" style="width: 95%;">
+    <div class="row">
+      <div class="col-xs-12 col-sm-9">
+        <form class="form-horizontal modal-content">
+          <span class="close" id="closeThird">&times;</span>
+          <div class="panel panel-default">
+            <div class="panel-heading">
+            <h4 class="panel-title">Change Password</h4>
+            </div>
+            <div class="panel-body">
+              <div class="form-group">
+                <label class="col-sm-2 control-label">New Password</label>
+                <div class="col-sm-10">
+                  <input id="newPassword" type="password" class="form-control">
+                  <span class="far fa-eye field-icon toggle-password"></span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label" style="width: 30%;">Confirm Password</label>
+                <div class="col-sm-10">
+                  <input id="confirmPassword" type="password" class="form-control">
+                  <span class="far fa-eye field-icon toggle-password"></span>
+                </div>
+              </div>
+              <br>
+              <div class="form-group">
+                <div class="col-sm-10 col-sm-offset-2">
+                  <button id="btnChangePW" type="button" class="btn btn-success">Submit</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ----------------------------  THIRD MODAL AREA  ----------------------------- -->
+
+  <div class="container bootstrap snippets bootdeys modal" id="createUser" style="width: 95%;">
+    <div class="row">
+      <div class="col-xs-12 col-sm-9">
+        <form class="form-horizontal modal-content">
+          <span class="close" id="closeSecond">&times;</span>
+          <div class="panel panel-default">
+            <div class="panel-heading">
+            <h4 class="panel-title">User info</h4>
+            </div>
+            <div class="panel-body">
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Email</label>
+                <div class="col-sm-10">
+                  <input id="newEmail" type="email" class="form-control">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Name</label>
+                <div class="col-sm-10">
+                  <input id="newName" type="text" class="form-control">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Surname</label>
+                <div class="col-sm-10">
+                  <input id="newSurname" type="text" class="form-control">
+                </div>
+              </div>
+              <br>
+              <div class="form-group">
+                <div class="col-sm-10 col-sm-offset-2">
+                  <button id="btnNewUser" type="button" class="btn btn-success">Submit</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>

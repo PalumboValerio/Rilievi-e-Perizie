@@ -24,9 +24,11 @@ $(document).ready(function(){
         request.fail(error);
         request.done(function(data)
         {
-            swalMsg("Confirm your identity to receive a new password! Check Admin's mailbox", "success", "Good!", {
-                cancel: false,
-                confirm: "Close"
+            Swal.fire({
+                title: 'Good!',
+                text: "Confirm your identity to receive a new password! Check Admin's mailbox",
+                icon: 'success',
+                confirmButtonText: 'Close'
             })
         });
     });
@@ -34,6 +36,7 @@ $(document).ready(function(){
     $(".toggle-password").on("click", function() {
 
         $(this).toggleClass("fa-eye fa-eye-slash");
+        
         if (input.eq(1).prop("type") == "password") {
           input.eq(1).prop("type", "text");
         } else {
@@ -90,11 +93,7 @@ $(document).ready(function(){
             }
         }
 
-        if(check=false)
-        {
-            return;
-        }
-        else
+        if(check)
         {
             let passMd5 = CryptoJS.MD5(input.eq(1).val().trim()).toString();
             let request = makeRequest("POST", "/api/login/",

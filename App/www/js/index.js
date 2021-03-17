@@ -143,6 +143,7 @@ $(document).ready(function () {
                         btnUser.prop("disabled", false);
                         error(jqXHR, testStatus, strError);
                     })
+                    
                     requestMail.done(function(data){
                         localStorage.setItem("SyphonUser", JSON.stringify(data));
                         updateUserData();

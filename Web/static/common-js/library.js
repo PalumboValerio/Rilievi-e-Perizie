@@ -25,19 +25,15 @@ function makeRequest(method, url, parameters = {}) {
 function error(jqXHR, testStatus, strError) {
     if (jqXHR.status == 0)
     {
-        swal("Error!", "Connection refused or Server timeout", "error");
-    }
-    else if(jqXHR.status == 403)
-    {
-        window.location.href="../../login.html";
+        Swal.fire('Error!', 'Connection refused or Server timeout.', 'error');
     }
     else if (jqXHR.status == 200)
     {
-        swal("Error!", "Data format uncorrect: " + jqXHR.responseText, "error");
+        Swal.fire('Error!', `Data format uncorrect: ${jqXHR.responseText}`, 'error');
     }
     else
     {
-        swal("Error!", "Server Error: " + jqXHR.status + " - " + jqXHR.responseText, "error");
+        Swal.fire('Error!', `Server Error: ${jqXHR.status} - ${jqXHR.responseText}`, 'error');
     }
 }
 
@@ -96,17 +92,4 @@ function getParameters()
         returnedParams[thisParameter[0]]=thisParameter[1];
     }
     return returnedParams;
-}
-
-function swalMsg(msg, icon, title, buttons, callback=null){
-    swal(msg, {
-        icon: icon,
-        title: title,
-        buttons: buttons
-    }).then((value) => {
-        if (typeof callback === 'function')
-        {
-            callback();
-        }
-    });
 }

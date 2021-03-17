@@ -31,7 +31,7 @@ $(document).ready(function () {
                 confirm: "Close"
             }, function(){
                 pwContainer.hide(700, function(){
-                    retArrow.show();
+                    retArrow.fadeIn(400);
                 });
                 btn.text(buttons[1]);
                 newUser=_this.hasClass("newUser");
@@ -42,7 +42,7 @@ $(document).ready(function () {
     });
 
     retArrow.on("click", function(){
-        retArrow.hide(0, function(){
+        retArrow.fadeOut(400, function(){
             pwContainer.show(700);
         });
         btn.text(buttons[0]);

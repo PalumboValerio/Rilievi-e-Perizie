@@ -1,6 +1,6 @@
 "use strict"
 
-/* ********************** Global requirements & management variables ********************** */
+//! ********************** Global requirements & management variables ********************** //
 
 // ************************************ Utilities ************************************ \\
 const fs = require("fs");
@@ -50,20 +50,6 @@ let transporter = nodemailer.createTransport({
     }
 });
 
-/* Giulia */
-const CONNECTIONSTRING_Giulia = "mongodb+srv://admin:adminpassword@progettoperizie.r13yb.mongodb.net";
-const CONNECTIONOPTIONS_Giulia = {useNewUrlParser: true, useUnifiedTopology: true};
-const DBNAME_Giulia = "perizie";
-
-let transporter_Giulia = nodemailer.createTransport({
-    service: 'Gmail',
-    auth: {
-      user: 'noreply.rilieviperizie@gmail.com',
-      pass: 'dr0wss4p'
-    }
-});
-/* Giulia */
-
 //let _prefix = "http://localhost:1337";
 let _prefix = "https://palumbo-rilievi-e-perizie.herokuapp.com/"
 
@@ -101,13 +87,13 @@ const corsOptions = {
     credentials: true
 };
 
-/* ********************** Starting listening server ********************** */
+//! ********************** Starting listening server ********************** \\
 init();
 server.listen(PORT, function () {
     console.log(`${colors.green(`[${new Date().toLocaleTimeString()}]`)}${colors.blue(`${SRVR_LOG}`)}Server listening on port: ${PORT}`);
 });
 
-/* ********************** Express listener ********************** */
+//! ********************** Express listener ********************** \\
 
 // 1) 
 app.use("*", function (req, res, next) {
@@ -162,6 +148,8 @@ app.use("/", fileupload({
         "fileSize": (10 * 1024 * 1024)
     }
 })) // 10Mb
+
+//! ********************** API ********************** \\
 
 app.post('/api/login', function (req, res, next) {
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
@@ -226,134 +214,6 @@ app.post('/api/login', function (req, res, next) {
         }
     });
 });
-
-/* Inizio di Giulia */
-app.post('/api/loginGiulia', function(req, res, next) {
-    mongoClient.connect(CONNECTIONSTRING_Giulia, CONNECTIONOPTIONS_Giulia, function(err, client) {
-        if (err)
-        {
-            console.log("NO");
-            res.status(503).send("Database connection error.");
-        }
-        else
-        {
-            let db = client.db(DBNAME_Giulia);
-            let collection = db.collection('users');
-
-            let username = req.body.username;
-            let pwd = req.body.password;
-            //console.log("Username: " + username + " - Password: " + pwd);
-            collection.findOne({"username": username}, function(err, dbUser) {
-                if (err)
-                {
-                    res.status(500).send("Internal Error in Query Execution.");
-                }
-                else
-                {
-                    if (dbUser == null)
-                    {
-                        res.status(401).send("Email or password not correct.");
-                    }
-                    else
-                    {
-                        console.log(dbUser.username + "    " + dbUser.password);
-                        bcrypt.compare(pwd, dbUser.password, function(err, ok) {
-                            if (err)
-                            {
-                                res.status(500).send("Internal Error in bcrypt compare.");
-                            }
-                            else
-                            {
-                                if (!ok)
-                                {
-                                    console.log("UFFA")
-                                    res.status(401).send("Password not correct.");
-                                }
-                                else
-                                {
-                                    setTokenAndCookie(dbUser, res);
-                                    //res.send({"file":"../index.html", "gender":dbUser.gender});
-                                    res.send({"ris":"ok"});
-                                    /*let options = {
-                                        root: path.join(__dirname)
-                                    };
-                                    res.sendFile("static/index.html", options, function (err) {
-                                        if (err) {
-                                            next(err);
-                                        } else {
-                                            console.log('Sent:', "index.html");
-                                        }
-                                    });*/
-                                }
-                            }
-                        });
-                    }
-                }
-                client.close();
-            });
-        }
-    });
-});
-
-app.post("/api/signUpGiulia/", function(req, res, next){
-    mongoClient.connect(CONNECTIONSTRING_Giulia, CONNECTIONOPTIONS_Giulia, function(err, client){
-        if (err)
-        {
-            res.status(503).send("Database connection error.");
-        }
-        else
-        {
-            let username = req.body.username;
-            let mail = req.body.mail;
-            //GENERARE A CASO
-            let password = "prova";
-            let passwordCrypt = bcrypt.hashSync(CryptoJS.MD5(password).toString(), 10);
-
-            let db = client.db(DBNAME_Giulia);
-            let collection = db.collection('users');
-            collection.insertOne({"username": username, "mail": mail, "password": passwordCrypt},function(err,data){
-                if (err)
-                {
-                    res.status(500).send("Internal Error in Query Execution.");
-                }
-                else
-                {
-                    collection.findOne({"mail":mail}, function(err, data){
-                        if(err)
-                        {
-                            res.status(500).send("Internal server error.");
-                        }
-                        else
-                        {
-                            let mailOptions = {
-                                from: 'noreply.rilieviperizie@gmail.com',
-                                to: mail,
-                                subject: 'Your temporary password',
-                                //text: 'Prova' // invia il corpo in plaintext
-                                html: `<h1>Good!</h1><br><p>Your temporary pasword is ${password}.<br> Now you can Sign in."</p>`  // invia il corpo in html
-                            };
-
-                            // invio il messaggio
-                            transporter_Giulia.sendMail(mailOptions, function(error, info){
-                                if(error)
-                                {
-                                    res.send({"ris":"ok"});
-                                    console.log("Error on sending message:     "+ error);
-                                }
-                                else
-                                {
-                                    res.send({"ris":"ok"});
-                                }
-                            });
-                            client.close();
-                        }
-                    });
-                }
-            });
-        }
-    });
-});
-/* Fine di Giulia */
 
 app.post("/api/confirmEmail/", function(req, res, next){
     let email = req.body.email;
@@ -496,8 +356,8 @@ app.post("/api/updateUser", function (req, res, next)
 {
     let set={};
     let email = req.body.email;
-    let name=req.body.name;
-    let surname=req.body.surname;
+    let name = req.body.name;
+    let surname = req.body.surname;
     let password = req.body.password;
 
     mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
@@ -547,11 +407,112 @@ app.post("/api/updateUser", function (req, res, next)
                             client.close();
                         });
                     }
+                    else
+                    {
+                        res.send({"ris":"nok"});
+                    }
                 }
             });
         }
     });
 });
+
+app.post("/api/changeAdminPW", function (req, res, next) 
+{
+    let set={};
+    let password = req.body.password;
+
+    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
+        if (err) 
+        {
+            res.status(503).send("Database connection error.");
+        } 
+        else 
+        {
+            let db = client.db(DBNAME);
+            let collection = db.collection('Users');
+
+            collection.findOne({ "email" : adminMail }, 
+            function (err, dataUser)
+            {
+                if (err) 
+                {
+                    res.status(500).send("Internal Error in Query Execution.");
+                } 
+                else 
+                {
+                    if(!(bcrypt.compareSync(password, dataUser.password)))
+                    {
+                        set.password = bcrypt.hashSync(password, 10);
+                    }
+
+                    if(set != {})
+                    {
+                        collection.updateOne({ "email": adminMail }, { $set: set },
+                        function (err, data) 
+                        {
+                            if (err) 
+                            {
+                                res.status(500).send("Internal server error.");
+                            } 
+                            else 
+                            {
+                                res.send(data);
+                            }
+                            client.close();
+                        });
+                    }
+                    else
+                    {
+                        res.send({"ris":"nok"});
+                    }
+                }
+            });
+        }
+    });
+});
+
+app.post("/api/createUser/", function (req, res, next) {
+    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function (err, client) {
+        if (err) 
+        {
+            res.status(503).send("Database connection error.");
+        } 
+        else
+        {
+            let email = req.body.email;
+            let name = req.body.name;
+            let surname = req.body.surname;
+
+            let rndpw = generateRandomPassword(10, true);
+            let pwCrypted=rndpw.syphonCrypt(10);
+
+            let db = client.db(DBNAME);
+            let collection = db.collection('Users');
+
+            collection.insertOne({"name" : name, "surname" : surname, "email" : email, "password" : pwCrypted},
+            function(err,data)
+            {
+                if (err)
+                {
+                    res.status(500).send("Internal Error in Query Execution.");
+                }
+                else
+                {
+                    readHTMLFile(`${__dirname}/static/createUser.html`, function(html)
+                    {
+                        sendHtmlEmail(adminMail, adminMail, 'Create User', html, { 
+                            password: rndpw,
+                            userEmail: email 
+                        });
+                        res.send({"ris" : "ok"});
+                        client.close();
+                    });
+                }
+            });
+        }
+    });
+})
 
 app.post("/api/newAppraisals/", function(req, res, next)
 {
@@ -614,7 +575,7 @@ app.use("/api", checkToken);
 app.post('/api/logout', function (req, res, next) {
     res.set("Set-Cookie", "token=;max-age=-1;Path=/;httponly=true;Secure=true;SameSite=Lax");
     res.send({
-        "ris": "ok"
+        "ris" : "ok"
     });
 });
 
@@ -652,37 +613,99 @@ app.post("/api/takeAppraisals", function (req, res, next)
     });
 });
 
-/*
- * If no previous route is valid for the request this one is done. Send the error page.
- */
+app.post("/api/adminComment/", function(req, res, next)
+{
+    let set={};
+    let id = ObjectID(req.body.id);
+    let comment = req.body.comment;
+
+    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function(err, client){
+        if (err)
+        {
+            res.status(503).send("Database connection error.");
+        }
+        else
+        {
+            let db = client.db(DBNAME);
+            let collection = db.collection('Appraisals');
+
+            collection.findOne({ "_id" : id }, function (err, dataUser)
+            {
+                if (err) 
+                {
+                    res.status(500).send("Internal Error in Query Execution.");
+                } 
+                else 
+                {
+                    collection.updateOne({ "_id": id }, { $set: { "adminNotes" : comment} },
+                    function (err, data)
+                    {
+                        if (err) 
+                        {
+                            res.status(500).send("Internal server error.");
+                        } 
+                        else 
+                        {
+                            res.send(data);
+                        }
+                        client.close();
+                    });
+                }
+            });
+        }
+    });
+});
+
+app.post("/api/deleteAppraisals/", function(req, res, next)
+{
+    let id = ObjectID(req.body.id);
+
+    mongoClient.connect(CONNECTIONSTRING, CONNECTIONOPTIONS, function(err, client){
+        if (err)
+        {
+            res.status(503).send("Database connection error.");
+        }
+        else
+        {
+            let db = client.db(DBNAME);
+            let collection = db.collection('Appraisals');
+
+            collection.deleteOne({ "_id" : id }, function (err, dataUser)
+            {
+                if (err) 
+                {
+                    res.status(500).send("Internal Error in Query Execution.");
+                } 
+                else 
+                {
+                    res.send({"ris" : "ok"});
+                }
+            });
+        }
+    });
+});
+
 app.use("*", function (req, res, next) {
     res.status(404);
     if (req.originalUrl.startsWith("/api/")) {
-        //res.json("Sorry, can't find the resource you are looking for.");
         res.send("Resource not found.");
     } else {
         res.send(errorPage);
     }
 });
 
-/*
- * If the server generate an error this route is done. Send the http response code 500.
- */
 app.use(function (err, req, res, next) {
     console.log(err.stack); //Stack completo (default).
     if (!err.codice) {
         err.codice = 500;
         err.message = "Internal Server Error.";
-        //server.close();
     }
     res.status(err.codice);
     res.send(err.message);
 });
 
-/* ********************** Functions ********************** */
-/*
- * Prepare or make the error displayed page.
- */
+//! ********************** Functions ********************** \\
+
 function init() {
     fs.readFile("./static/error.html", function (err, data) {
         if (!err) {
@@ -703,22 +726,6 @@ function init() {
     app.response.log = function (message) {
         console.log(message);
     }
-}
-
-/*
- * Write the data that recive as a parameter after date and hour.
- */
-function log(data) {
-    console.log(`${colors.cyan("[" + new Date().toLocaleTimeString() + "]")} ${data}`);
-}
-
-/*
- * Search if a user is already logged in.
- */
-function findUser(username, room) {
-    return users.find(function (item) {
-        return (item.username == username && item.room == room)
-    });
 }
 
 function generateRandomPassword(lenght, isAlsoNumeric)
@@ -821,15 +828,11 @@ function readCookie(req) {
                 break;
             }
         }
-        //Trasforma cookies in un array di json
-        //Object.fromEntries(cookies);
     }
     return valoreCookie;
 }
 
-//data --> record dell'utente
 function createToken(data) {
-    //sign() --> si aspetta come parametro un json con i parametri che si vogliono mettere nel token
     let param = {
         "_id": data["_id"],
         "email": data.email,

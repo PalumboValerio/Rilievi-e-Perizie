@@ -15,12 +15,14 @@ $(document).ready(function()
         request.fail(error);
         request.done(function(data)
         {
-            swalMsg("A new password was sent to your mailbox!", "success", "Good!", {
-                cancel: false,
-                confirm: "Close"
-            }, function(){
+            Swal.fire({
+                title: 'Good!',
+                text: "A new password was sent to your mailbox!",
+                icon: 'success',
+                confirmButtonText: 'Close'
+            }).then((value) => {
                 close();
-            })
+            });
         });
     }
     else
@@ -33,12 +35,14 @@ $(document).ready(function()
         request.fail(error);
         request.done(function(data)
         {
-            swalMsg("Your account was created. Check your mailbox!", "success", "Good!", {
-                cancel: false,
-                confirm: "Close"
-            }, function(){
+            Swal.fire({
+                title: 'Good!',
+                text: "Your account was created. Check your mailbox!",
+                icon: 'success',
+                confirmButtonText: 'Close'
+            }).then((value) => {
                 close();
-            })
+            });
         });
     }
 });
