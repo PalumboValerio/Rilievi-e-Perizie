@@ -9,9 +9,9 @@ Lato web è possibile loggarsi con un unico account definito come admin:
 
 Questo può:
 1. Visualizzare subito tutti i marker relativi alle perizie. Premendo su ciuscuno può visualizzare i  dettagli specifici e le immagini legate alla singola perizia. Qui può:
-    1. Inserire o modificare un commento personale;
-    2. Visualizzare il percorso dalla sua posizione a quella della perizia;
-    3. Eliminare la perizia.
+    - Inserire o modificare un commento personale;
+    - Visualizzare il percorso dalla sua posizione a quella della perizia;
+    - Eliminare la perizia.
 2. Cambiare la sua password manualmente o attraverso la sua generazione casuale prima di effettuare il login;
 3. Creare un utente, la cui password gli verrà mandata per mail. Suo compito sarà recapitarla alla mail del nuovo utente;
 4. Eseguire il logout.
