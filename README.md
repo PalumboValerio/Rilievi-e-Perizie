@@ -1,17 +1,29 @@
-# Rilievi-e-Perizie
+# Syphon ICT
 
-Una certa azienda di assicurazioni ha necessità di archiviare in tempo reale su un server le fotografie di rilievi/perizie eseguite dai propri dipendenti. Insieme ad ogni fotografia occorre salvare:
-- Coordinate geografiche del luogo in cui la fotografia è stata scattata
-- Data e ora di scatto
-- Codice dell’operatore che ha scattato la fotografia
-- Note inserite dall’operatore che ha eseguito lo scatto
+## Web
 
-A tal fine realizzare una apk android che consenta all’operatore di scattare le fotografie ed archiviarle su un server remoto. Le fotografie possono essere uploadate singolarmente oppure a gruppi.
-L’operatore, al primo utilizzo, deve registrarsi sul server. In corrispondenza del login viene restituito un token con TTL elevato in modo da non dover rifare il login ogni volta.
-Lato server realizzare una o più API nodejs pubblicate su heroku che memorizzano i dati all’interno di un database posizionato su Atlas. Le immagini possono essere salvate all’interno del DB in formato base64 (con impostazione di una dimensione massima) oppure su un file server esterno.
+Lato web è possibile loggarsi con un unico account definito come admin:
+> email:    syphon.ict@gmail.com
+> password: SyphonICT_2021
 
-Realizzare infine una applicazione server con target PC desktop in cui un utente ADMIN:
-- Può creare gli utenti abilitati allo store delle fotografie. La password iniziale sarà generata casualmente dal server e l’utente dovrà modificarla in corrispondenza del primo accesso
-- Può visualizzare su una unica mappa tutte le fotografie scattate dagli operatori. Ogni fotografia sarà caratterizzata da un apposito segnaposto posizionato sul luogo di scatto della fotografia. In corrispondenza del click sul segnaposto verrà visualizzata la foto con tutte le informazioni ad essa associate
-- Per ogni immagine l’utente ADMIN può aggiungere o modificare ulteriori considerazioni personali (gestite all’interno di un unico campo per ogni fotografia).
-- Infine l’utente ADMIN potrà visualizzare percorso e tempo di percorrenza per il raggiungimento del luogo in cui è stata scattata la fotografia
+Questo può:
+1. Visualizzare subito tutti i marker relativi alle perizie. Premendo su ciuscuno può visualizzare i  dettagli specifici e le immagini legate alla singola perizia. Qui può:
+    1. Inserire o modificare un commento personale;
+    2. Visualizzare il percorso dalla sua posizione a quella della perizia;
+    3. Eliminare la perizia.
+2. Cambiare la sua password manualmente o attraverso la sua generazione casuale prima di effettuare il login;
+3. Creare un utente, la cui password gli verrà mandata per mail. Suo compito sarà recapitarla alla mail del nuovo utente;
+4. Eseguire il logout.
+
+## App
+
+Lato applicativo è possibile loggarsi con un qualsiasi utente registrato. Qui riporto l'utente creato per lei:
+> email:    roberto.mana@vallauri.edu
+> password: user
+
+Questo può:
+1. Richiedere la creazione del proprio account con verifica della mail data e generazione casuale di una password poi recapitata all'indirizzo email fornito;
+2. Richiedere una nuova password generata casualmente, seguendo gli stessi passaggi;
+3. Modificare i propri dati, esclusa la password;
+4. Eseguire una nuova perizia con possibilità di caricare molteplici foto con l'ausilio di cloudinary e dare l'invio dei nuovi dati mediante una comoda form modale;
+5. Eseguire il logout.
