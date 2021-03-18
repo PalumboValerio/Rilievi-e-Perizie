@@ -19,7 +19,8 @@ Questo può:
 
 Lato applicativo è possibile loggarsi con un qualsiasi utente registrato. Qui riporto l'utente creato per lei:
 > email:    roberto.mana@vallauri.edu
-  password: user
+
+> password: user
 
 Questo può:
 1. Richiedere la creazione del proprio account con verifica della mail data e generazione casuale di una password poi recapitata all'indirizzo email fornito;
