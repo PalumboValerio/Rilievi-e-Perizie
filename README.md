@@ -4,6 +4,7 @@
 
 Lato web è possibile loggarsi con un unico account definito come admin:
 > email:    syphon.ict@gmail.com
+
 > password: SyphonICT_2021
 
 Questo può:
