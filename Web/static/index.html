@@ -180,6 +180,10 @@
     .modal::-webkit-scrollbar {
       display: none;
     }
+	
+	.panel::-webkit-scrollbar {
+      display: none;
+    }
 
     body::-webkit-scrollbar {
       display: none;
@@ -248,7 +252,7 @@
 
   <div id="wrapper">
     <div class="map"></div>
-    <div class="panel" style="background-color: white;"></div>
+	<div class="panel" style="background-color: white; height: 700px; overflow-y: scroll;"></div>
     <div class="msg" style="background-color: white;"></div>
   </div>
 

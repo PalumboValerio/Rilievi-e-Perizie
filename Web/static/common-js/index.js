@@ -39,6 +39,7 @@ $(document).ready(function()
 	let newName = $("#newName");
 	let newSurname = $("#newSurname");
 
+	wrapper.children(".panel").hide();
 	initMap();
 	setMarkers();
 
@@ -87,6 +88,8 @@ $(document).ready(function()
 					"mapTypeId":google.maps.MapTypeId.ROADMAP
 				}
 
+				wrapper.children(".panel").fadeIn();
+				
 				map = new google.maps.Map(_map, mapOptions);
 				directionsRenderer.setMap(map);
 				calcRoute(directionsService, directionsRenderer);
